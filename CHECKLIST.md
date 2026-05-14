@@ -28,13 +28,18 @@ Estado vivo y razonado en [`docs/ENGRAM.md`](./docs/ENGRAM.md).
 
 Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) §6.
 
-- [ ] Entidades del dominio (Business, Customer, Package, Attendance, etc.)
+- [x] Entidades del dominio del flujo de escaneo (Business, Customer, Package, QrToken, Attendance) — 58 tests verdes
+- [ ] Entidades restantes (BusinessAdmin, ApiKey, WebhookSubscription, WebhookDelivery)
 - [ ] Schemas Zod en `packages/shared-types`
 - [ ] Migraciones Drizzle iniciales + políticas RLS (ver D-007)
-- [ ] Repositorios (interfaces en domain, impl en infrastructure)
+- [ ] Repositorios Drizzle (impl en infrastructure; interfaces en domain ya creadas para 5 entidades del flujo de escaneo)
 - [ ] Use cases v1 (~13, ver D-005)
-- [ ] Tests unitarios con `bun test`
+- [ ] Tests unitarios con `bun test` (parcial: dominio del flujo de escaneo cubierto)
 - [ ] Tests de integración con `@testcontainers/postgresql`
+
+### Cleanup técnico (no urgente)
+
+- [ ] Alinear `apps/web/tsconfig.json` para extender `tsconfig.base.json` (hoy es el default de `bun create next-app`, no comparte la strictness del base — `noUncheckedIndexedAccess`, `noImplicitOverride`, etc.)
 
 ## Cross-cutting (cuando aplique)
 
