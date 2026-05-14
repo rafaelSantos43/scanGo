@@ -1,19 +1,24 @@
 /**
- * Diagnostico: aplica la migracion inicial statement-by-statement e
- * imprime exactamente cual SQL falla. Util cuando drizzle-kit migrate
- * se cae con "applying migrations..." sin mas detalle.
+ * Diagnostico: aplica una migracion .sql statement-by-statement e
+ * imprime exactamente cual falla. Util cuando drizzle-kit migrate se
+ * cae con "applying migrations..." sin mas detalle.
  *
- * Uso: cd apps/web && bun run scripts/apply-migration.ts
+ * Uso:
+ *   # Aplica la 0000 (default):
+ *   cd apps/web && bun run scripts/apply-migration.ts
  *
- * Para limpiar antes (si quedo estado parcial de un intento previo):
+ *   # Aplica una migracion especifica (sin extension):
+ *   cd apps/web && bun run scripts/apply-migration.ts 0001_auth_business_admins
+ *
+ *   # Drop tablas del flujo de escaneo antes (limpia estado parcial):
  *   cd apps/web && bun run scripts/apply-migration.ts --reset
  */
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import postgres from 'postgres'
 
-const TABLES = [
+const SCAN_FLOW_TABLES = [
   'attendances',
   'qr_tokens',
   'packages',
@@ -27,14 +32,43 @@ async function main(): Promise<void> {
     console.error('DATABASE_URL no esta definido')
     process.exit(1)
   }
+
+  const args = process.argv.slice(2).filter((a) => !a.startsWith('--'))
   const reset = process.argv.includes('--reset')
+  const requested = args[0]
+
+  const migrationsDir = resolve(
+    import.meta.dirname,
+    '..',
+    'drizzle',
+    'migrations',
+  )
+
+  // Resolve cual archivo aplicar.
+  let migrationFile: string
+  if (requested) {
+    const candidate = requested.endsWith('.sql') ? requested : `${requested}.sql`
+    const allFiles = readdirSync(migrationsDir)
+    if (!allFiles.includes(candidate)) {
+      console.error(
+        `Migracion '${candidate}' no existe en ${migrationsDir}.\n` +
+          `Disponibles:\n  ${allFiles
+            .filter((f) => f.endsWith('.sql'))
+            .join('\n  ')}`,
+      )
+      process.exit(1)
+    }
+    migrationFile = candidate
+  } else {
+    migrationFile = '0000_init_scan_flow.sql'
+  }
 
   const sql = postgres(url, { max: 1, prepare: false, connect_timeout: 10 })
 
   try {
     if (reset) {
-      console.log('Reset solicitado — borrando tablas existentes...')
-      for (const table of TABLES) {
+      console.log('Reset solicitado — borrando tablas del flujo de escaneo...')
+      for (const table of SCAN_FLOW_TABLES) {
         try {
           await sql.unsafe(`DROP TABLE IF EXISTS "${table}" CASCADE`)
           console.log(`  dropped ${table}`)
@@ -45,7 +79,6 @@ async function main(): Promise<void> {
       console.log('Reset listo.\n')
     }
 
-    // Lista tablas existentes para detectar estado parcial.
     const existing = await sql<Array<{ tablename: string }>>`
       SELECT tablename FROM pg_tables WHERE schemaname = 'public'
     `
@@ -57,20 +90,16 @@ async function main(): Promise<void> {
     )
     console.log('')
 
-    const migrationPath = resolve(
-      import.meta.dirname,
-      '..',
-      'drizzle',
-      'migrations',
-      '0000_init_scan_flow.sql',
-    )
+    const migrationPath = resolve(migrationsDir, migrationFile)
     const content = readFileSync(migrationPath, 'utf-8')
     const statements = content
       .split('--> statement-breakpoint')
       .map((s) => s.trim())
       .filter((s) => s.length > 0)
 
-    console.log(`Aplicando ${statements.length} statements...\n`)
+    console.log(
+      `Aplicando ${migrationFile} (${statements.length} statements)...\n`,
+    )
 
     for (let i = 0; i < statements.length; i++) {
       const stmt = statements[i]!
@@ -92,7 +121,7 @@ async function main(): Promise<void> {
       }
     }
 
-    console.log('\nMigracion aplicada completa.')
+    console.log(`\n${migrationFile} aplicada completa.`)
   } finally {
     await sql.end({ timeout: 5 })
   }
