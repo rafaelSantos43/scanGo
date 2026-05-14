@@ -1,7 +1,8 @@
 import type { Attendance } from '@/domain/entities/Attendance'
 import type { AttendanceRepository } from '@/domain/repositories/AttendanceRepository'
 import { AlreadyScannedTodayError } from '@/domain/errors/AlreadyScannedTodayError'
-import type { BusinessId } from '@/domain/value-objects/ids'
+import type { BusinessId, CustomerId } from '@/domain/value-objects/ids'
+import { and, eq } from 'drizzle-orm'
 import type { DbOrTx } from './client'
 import { AttendanceMapper } from './mappers/AttendanceMapper'
 import { attendances } from './schema'
@@ -27,5 +28,24 @@ export class AttendanceRepositoryDrizzle implements AttendanceRepository {
       }
       throw err
     }
+  }
+
+  async findByCustomerAndDate(
+    customerId: CustomerId,
+    businessId: BusinessId,
+    scannedDate: string,
+  ): Promise<Attendance | null> {
+    const rows = await this.db
+      .select()
+      .from(attendances)
+      .where(
+        and(
+          eq(attendances.customerId, customerId),
+          eq(attendances.businessId, businessId),
+          eq(attendances.scannedDate, scannedDate),
+        ),
+      )
+      .limit(1)
+    return rows[0] ? AttendanceMapper.toDomain(rows[0]) : null
   }
 }

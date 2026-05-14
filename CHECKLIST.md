@@ -37,7 +37,8 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Métodos atómicos: `QrTokenRepository.claim()` y `PackageRepository.decrementVisitAtomic()`
 - [x] Soporte de transacciones en los repos (aceptan `DbOrTx = Database | DrizzleTx`)
 - [x] Use case `RegisterAttendance` (CU-03) + `SystemClock` + `UuidGenerator` + factory `runRegisterAttendance(input)` envolviendo `db.transaction`
-- [ ] Idempotencia (§9.2) — reintentos del mismo día deben retornar el `Attendance` existente, no lanzar `AlreadyScannedTodayError`. Requiere `AttendanceRepository.findByCustomerAndDate()` y catch + retorno en el use case
+- [x] Idempotencia (§9.2) — chequeo previo en `RegisterAttendance` retorna la asistencia existente. `AttendanceRepository.findByCustomerAndDate` y `PackageRepository.findById` añadidos. Carrera concurrente sigue cayendo en el constraint UNIQUE (no rompe nada).
+- [x] Fix del `isUniqueViolation` para caminar `.cause` de `DrizzleQueryError` (antes el mapeo a `AlreadyScannedTodayError` no se gatillaba)
 - [ ] Outbox en `RegisterAttendance` — insertar filas pending para `attendance.created` (+ `package.depleted` cuando aplique) dentro de la misma transacción. Bloqueado hasta tener `WebhookSubscription` + `WebhookDelivery`
 - [x] Use cases CU-02: `CreateCustomer`, `AssignPackage` + endpoints + business auth stub
 - [ ] Use cases CU-01: `RegisterBusiness` (bloqueado hasta auth: requiere `BusinessAdmin` + `ApiKey`)
@@ -56,7 +57,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Sistema de paleta swappable en ambas apps: tokens `@theme` de Tailwind v4 en `globals.css`. Cero hex/primitivos en componentes. Cambiar `--color-*` actualiza todas las pantallas.
 - [x] `apps/pwa` — pantalla `/scan` con `@yudiel/react-qr-scanner`, mensajes específicos por código de error del backend.
 - [x] `apps/pwa` — landing `/` con mini-form que persiste `customerId` + `businessId` en localStorage (stub hasta auth real).
-- [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`, polling cada 30s a `/v1/qr/generate`.
+- [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`. Polling auto removido a pedido del usuario; ahora el QR se genera una vez al cargar y hay un botón manual "Generar nuevo QR". Auto-rotación tras escaneo exitoso queda para cuando entre Realtime.
 - [x] State management: TanStack Query (server) + React Context (session) + Server Components donde se pueda. Convención registrada en [`docs/agents/agent_ui_ux.md`](docs/agents/agent_ui_ux.md) §3.9. Cero `useEffect` para fetching en todo el código de UI.
 - [ ] Manifest PWA + service worker (`next-pwa`) en `apps/pwa`
 - [ ] Dashboard del negocio (lista de asistencias, gestión de clientes, etc.) — fuera de scope hasta auth real

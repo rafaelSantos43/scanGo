@@ -1,17 +1,13 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
+import { Loader2, RefreshCw } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { fetchNewQr } from '@/lib/api/client'
 import { useDashboardSession } from '@/lib/dashboard-session-context'
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-// Compromiso entre RF-17 (regenerar tras uso) y simplicidad de v1. Polling
-// fijo cada 30s — sin Realtime hasta que exista RLS en DB.
-const REFRESH_INTERVAL_MS = 30_000
 
 export default function ScanDisplayPage() {
   const { session, isHydrated, setSession } = useDashboardSession()
@@ -20,8 +16,6 @@ export default function ScanDisplayPage() {
     queryKey: ['qr', session?.businessId],
     queryFn: () => fetchNewQr(session!.businessId),
     enabled: Boolean(session?.businessId),
-    refetchInterval: REFRESH_INTERVAL_MS,
-    refetchIntervalInBackground: true,
   })
 
   function handleSetupSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -87,7 +81,7 @@ export default function ScanDisplayPage() {
       </header>
 
       <div
-        className="flex aspect-square w-full max-w-[28rem] items-center justify-center rounded-2xl border border-border bg-surface p-8"
+        className="flex aspect-square w-full max-w-md items-center justify-center rounded-2xl border border-border bg-surface p-8"
         aria-live="polite"
       >
         {qr.isPending && (
@@ -110,22 +104,31 @@ export default function ScanDisplayPage() {
         {qr.isError && (
           <div className="flex flex-col items-center gap-3 text-center">
             <p className="text-base text-danger">
-              No se pudo generar el QR. Reintentando...
+              No se pudo generar el QR.
             </p>
             <button
               type="button"
               onClick={() => qr.refetch()}
               className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
             >
-              Reintentar ahora
+              Reintentar
             </button>
           </div>
         )}
       </div>
 
-      <footer className="text-sm text-muted-foreground">
-        Se renueva cada {REFRESH_INTERVAL_MS / 1000} segundos
-      </footer>
+      <button
+        type="button"
+        onClick={() => qr.refetch()}
+        disabled={qr.isFetching}
+        className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-base text-foreground hover:bg-muted disabled:opacity-50"
+      >
+        <RefreshCw
+          className={`h-4 w-4 ${qr.isFetching ? 'animate-spin' : ''}`}
+          aria-hidden="true"
+        />
+        Generar nuevo QR
+      </button>
     </main>
   )
 }

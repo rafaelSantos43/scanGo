@@ -31,6 +31,23 @@ export class PackageRepositoryDrizzle implements PackageRepository {
     return rows[0] ? PackageMapper.toDomain(rows[0]) : null
   }
 
+  async findById(
+    packageId: PackageId,
+    businessId: BusinessId,
+  ): Promise<Package | null> {
+    const rows = await this.db
+      .select()
+      .from(packages)
+      .where(
+        and(
+          eq(packages.id, packageId),
+          eq(packages.businessId, businessId),
+        ),
+      )
+      .limit(1)
+    return rows[0] ? PackageMapper.toDomain(rows[0]) : null
+  }
+
   async save(pkg: Package, businessId: BusinessId): Promise<void> {
     if (pkg.businessId !== businessId) {
       throw new Error('Package businessId does not match expected businessId')

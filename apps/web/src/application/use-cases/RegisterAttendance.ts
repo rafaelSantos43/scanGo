@@ -57,6 +57,36 @@ export class RegisterAttendanceUseCase {
     )
     if (!business) throw new BusinessNotFoundError(input.businessId)
 
+    const scannedDate = formatDateInTimezone(now, business.timezone)
+
+    // Idempotencia §9.2: si el cliente ya marco hoy, retornamos esa
+    // asistencia sin tocar QR ni paquete. Cubre el reintento de tap
+    // accidental o de red sin consumir un QR adicional ni descontar
+    // visitas. La carrera (dos requests concurrentes pasando este
+    // check) sigue cayendo en el constraint UNIQUE de attendances al
+    // hacer save y propaga AlreadyScannedTodayError (409).
+    const existing = await this.attendances.findByCustomerAndDate(
+      input.customerId,
+      input.businessId,
+      scannedDate,
+    )
+    if (existing) {
+      const pkg = await this.packages.findById(
+        existing.packageId,
+        input.businessId,
+      )
+      if (!pkg) {
+        throw new Error(
+          `Inconsistent state: attendance ${existing.id} references missing package ${existing.packageId}`,
+        )
+      }
+      return {
+        attendance: existing,
+        package: pkg,
+        remainingVisits: pkg.remainingVisits.value,
+      }
+    }
+
     const customer = await this.customers.findById(
       input.customerId,
       input.businessId,
@@ -94,8 +124,6 @@ export class RegisterAttendanceUseCase {
       input.businessId,
     )
     if (!updatedPackage) throw new PackageDepletedError(activePackage.id)
-
-    const scannedDate = formatDateInTimezone(now, business.timezone)
 
     const attendance = new Attendance({
       id: AttendanceId(this.ids.uuid()),
