@@ -1,3 +1,10 @@
+import {
+  RegisterAttendanceUseCase,
+  type RegisterAttendanceInput,
+  type RegisterAttendanceResult,
+} from '@/application/use-cases/RegisterAttendance'
+import { SystemClock } from './clock/SystemClock'
+import { UuidGenerator } from './ids/UuidGenerator'
 import { AttendanceRepositoryDrizzle } from './persistence/drizzle/AttendanceRepositoryDrizzle'
 import { BusinessRepositoryDrizzle } from './persistence/drizzle/BusinessRepositoryDrizzle'
 import { CustomerRepositoryDrizzle } from './persistence/drizzle/CustomerRepositoryDrizzle'
@@ -33,4 +40,22 @@ export function buildQrTokenRepository(): QrTokenRepositoryDrizzle {
 
 export function buildAttendanceRepository(): AttendanceRepositoryDrizzle {
   return new AttendanceRepositoryDrizzle(getDb())
+}
+
+export async function runRegisterAttendance(
+  input: RegisterAttendanceInput,
+): Promise<RegisterAttendanceResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new RegisterAttendanceUseCase(
+      new BusinessRepositoryDrizzle(tx),
+      new CustomerRepositoryDrizzle(tx),
+      new PackageRepositoryDrizzle(tx),
+      new AttendanceRepositoryDrizzle(tx),
+      new QrTokenRepositoryDrizzle(tx),
+      new SystemClock(),
+      new UuidGenerator(),
+    )
+    return useCase.execute(input)
+  })
 }

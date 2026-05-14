@@ -34,9 +34,12 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Migración inicial Drizzle (`0000_init_scan_flow.sql`) + políticas RLS para las 5 tablas del flujo de escaneo (D-007)
 - [x] Repositorios Drizzle del flujo de escaneo (5 mappers + 5 repos + composition factories)
 - [ ] Repositorios Drizzle del resto (ApiKey, BusinessAdmin, WebhookSubscription, WebhookDelivery)
-- [ ] Use cases v1 (~13, ver D-005) — empezar por `RegisterAttendance` (CU-03)
-- [ ] Métodos atómicos pendientes: `QrTokenRepository.claim()` y `PackageRepository.decrementVisitAtomic()` cuando los pida `RegisterAttendance`
-- [ ] Soporte de transacciones en los repos (aceptar `Database | Transaction`)
+- [x] Métodos atómicos: `QrTokenRepository.claim()` y `PackageRepository.decrementVisitAtomic()`
+- [x] Soporte de transacciones en los repos (aceptan `DbOrTx = Database | DrizzleTx`)
+- [x] Use case `RegisterAttendance` (CU-03) + `SystemClock` + `UuidGenerator` + factory `runRegisterAttendance(input)` envolviendo `db.transaction`
+- [ ] Idempotencia (§9.2) — reintentos del mismo día deben retornar el `Attendance` existente, no lanzar `AlreadyScannedTodayError`. Requiere `AttendanceRepository.findByCustomerAndDate()` y catch + retorno en el use case
+- [ ] Outbox en `RegisterAttendance` — insertar filas pending para `attendance.created` (+ `package.depleted` cuando aplique) dentro de la misma transacción. Bloqueado hasta tener `WebhookSubscription` + `WebhookDelivery`
+- [ ] Resto de use cases v1 (~12 más, ver D-005)
 - [ ] Aplicar la migración a una DB real (Supabase staging) — bloqueado hasta tener `DATABASE_URL` configurada
 - [ ] Tests unitarios con `bun test` (parcial: dominio del flujo de escaneo cubierto)
 - [ ] Tests de integración con `@testcontainers/postgresql`

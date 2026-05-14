@@ -3,12 +3,12 @@ import type { CustomerRepository } from '@/domain/repositories/CustomerRepositor
 import type { Email } from '@/domain/value-objects/Email'
 import type { BusinessId, CustomerId } from '@/domain/value-objects/ids'
 import { and, eq } from 'drizzle-orm'
-import type { Database } from './client'
+import type { DbOrTx } from './client'
 import { CustomerMapper } from './mappers/CustomerMapper'
 import { customers } from './schema'
 
 export class CustomerRepositoryDrizzle implements CustomerRepository {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: DbOrTx) {}
 
   async findById(
     id: CustomerId,

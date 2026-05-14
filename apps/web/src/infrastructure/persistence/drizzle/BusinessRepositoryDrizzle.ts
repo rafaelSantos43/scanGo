@@ -3,12 +3,12 @@ import type { BusinessRepository } from '@/domain/repositories/BusinessRepositor
 import type { Slug } from '@/domain/value-objects/Slug'
 import type { BusinessId } from '@/domain/value-objects/ids'
 import { and, eq } from 'drizzle-orm'
-import type { Database } from './client'
+import type { DbOrTx } from './client'
 import { BusinessMapper } from './mappers/BusinessMapper'
 import { businesses } from './schema'
 
 export class BusinessRepositoryDrizzle implements BusinessRepository {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: DbOrTx) {}
 
   async findById(
     id: BusinessId,
