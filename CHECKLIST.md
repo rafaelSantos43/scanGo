@@ -31,9 +31,13 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Entidades del dominio del flujo de escaneo (Business, Customer, Package, QrToken, Attendance) — 58 tests verdes
 - [ ] Entidades restantes (BusinessAdmin, ApiKey, WebhookSubscription, WebhookDelivery)
 - [ ] Schemas Zod en `packages/shared-types`
-- [ ] Migraciones Drizzle iniciales + políticas RLS (ver D-007)
-- [ ] Repositorios Drizzle (impl en infrastructure; interfaces en domain ya creadas para 5 entidades del flujo de escaneo)
-- [ ] Use cases v1 (~13, ver D-005)
+- [x] Migración inicial Drizzle (`0000_init_scan_flow.sql`) + políticas RLS para las 5 tablas del flujo de escaneo (D-007)
+- [x] Repositorios Drizzle del flujo de escaneo (5 mappers + 5 repos + composition factories)
+- [ ] Repositorios Drizzle del resto (ApiKey, BusinessAdmin, WebhookSubscription, WebhookDelivery)
+- [ ] Use cases v1 (~13, ver D-005) — empezar por `RegisterAttendance` (CU-03)
+- [ ] Métodos atómicos pendientes: `QrTokenRepository.claim()` y `PackageRepository.decrementVisitAtomic()` cuando los pida `RegisterAttendance`
+- [ ] Soporte de transacciones en los repos (aceptar `Database | Transaction`)
+- [ ] Aplicar la migración a una DB real (Supabase staging) — bloqueado hasta tener `DATABASE_URL` configurada
 - [ ] Tests unitarios con `bun test` (parcial: dominio del flujo de escaneo cubierto)
 - [ ] Tests de integración con `@testcontainers/postgresql`
 
