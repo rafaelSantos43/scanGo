@@ -10,8 +10,8 @@
     "examples/*"
   ],
   "scripts": {
-    "dev:web": "bun --filter web dev",
-    "dev:pwa": "bun --filter pwa dev",
+    "dev:web": "bun --filter @scango/web dev",
+    "dev:pwa": "bun --filter @scango/pwa dev",
     "build": "bun --filter '*' build",
     "typecheck": "bun --filter '*' typecheck",
     "lint": "bun --filter '*' lint",
