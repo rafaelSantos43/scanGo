@@ -67,3 +67,17 @@ export const AssignPackageResponseSchema = z.object({
   expiresAt: z.string().datetime().nullable(),
 })
 export type AssignPackageResponse = z.infer<typeof AssignPackageResponseSchema>
+
+// POST /v1/qr/generate
+// Sin body — el businessId viene del auth context. .strict() evita que un
+// caller mande campos extra silenciosamente.
+export const GenerateQrRequestSchema = z.object({}).strict()
+export type GenerateQrRequest = z.infer<typeof GenerateQrRequestSchema>
+
+export const GenerateQrResponseSchema = z.object({
+  token: uuid,
+  businessId: uuid,
+  generatedAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+})
+export type GenerateQrResponse = z.infer<typeof GenerateQrResponseSchema>

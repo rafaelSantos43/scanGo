@@ -9,6 +9,11 @@ import {
   type CreateCustomerResult,
 } from '@/application/use-cases/CreateCustomer'
 import {
+  GenerateQrUseCase,
+  type GenerateQrInput,
+  type GenerateQrResult,
+} from '@/application/use-cases/GenerateQr'
+import {
   RegisterAttendanceUseCase,
   type RegisterAttendanceInput,
   type RegisterAttendanceResult,
@@ -93,6 +98,21 @@ export async function runAssignPackage(
     const useCase = new AssignPackageUseCase(
       new CustomerRepositoryDrizzle(tx),
       new PackageRepositoryDrizzle(tx),
+      new SystemClock(),
+      new UuidGenerator(),
+    )
+    return useCase.execute(input)
+  })
+}
+
+export async function runGenerateQr(
+  input: GenerateQrInput,
+): Promise<GenerateQrResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new GenerateQrUseCase(
+      new BusinessRepositoryDrizzle(tx),
+      new QrTokenRepositoryDrizzle(tx),
       new SystemClock(),
       new UuidGenerator(),
     )

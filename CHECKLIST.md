@@ -41,7 +41,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [ ] Outbox en `RegisterAttendance` — insertar filas pending para `attendance.created` (+ `package.depleted` cuando aplique) dentro de la misma transacción. Bloqueado hasta tener `WebhookSubscription` + `WebhookDelivery`
 - [x] Use cases CU-02: `CreateCustomer`, `AssignPackage` + endpoints + business auth stub
 - [ ] Use cases CU-01: `RegisterBusiness` (bloqueado hasta auth: requiere `BusinessAdmin` + `ApiKey`)
-- [ ] Use case `GenerateQr` + `RotateQr` + endpoint (necesario para PWA: el negocio debe generar el QR que el cliente escanea)
+- [x] Use case `GenerateQr` + endpoint `POST /v1/qr/generate` (sirve también el caso "rotate": el frontend llama otra vez para obtener un QR nuevo)
 - [ ] Use cases restantes: `UpdateCustomer`, `DisableCustomer`, `ListAttendances`, `IssueApiKey`, `RevokeApiKey`, `CreateWebhookSubscription`, `DeliverWebhook` (cron)
 - [ ] Aplicar la migración a una DB real (Supabase staging) — bloqueado hasta tener `DATABASE_URL` configurada
 - [ ] Tests unitarios con `bun test` (parcial: dominio del flujo de escaneo cubierto)
