@@ -1,19 +1,12 @@
 'use client'
 
+import { useMutation } from '@tanstack/react-query'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import { Check, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import type { ScanResponse } from '@scango/shared-types'
+import { useState } from 'react'
 import { ApiError, scanQrToken } from '@/lib/api'
-import { readSession, type ScanGoClientSession } from '@/lib/session'
-
-type Phase =
-  | { kind: 'idle' }
-  | { kind: 'scanning' }
-  | { kind: 'loading' }
-  | { kind: 'success'; data: ScanResponse }
-  | { kind: 'error'; code: string; message: string }
+import { useSession } from '@/lib/session-context'
 
 function messageForCode(code: string): string {
   switch (code) {
@@ -39,46 +32,36 @@ function messageForCode(code: string): string {
 }
 
 export default function ScanPage() {
-  const [session, setSession] = useState<ScanGoClientSession | null>(null)
-  const [sessionReady, setSessionReady] = useState(false)
-  const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
+  const { session, isHydrated } = useSession()
+  const [screen, setScreen] = useState<'idle' | 'scanning'>('idle')
+  const [cameraError, setCameraError] = useState<string | null>(null)
 
-  useEffect(() => {
-    setSession(readSession())
-    setSessionReady(true)
-  }, [])
+  const scan = useMutation({
+    mutationFn: (qrToken: string) => {
+      if (!session) throw new Error('Sesion no disponible')
+      return scanQrToken(qrToken, session.customerId, session.businessId)
+    },
+  })
 
-  async function handleDetectedToken(qrToken: string) {
-    if (phase.kind !== 'scanning' || !session) return
-    setPhase({ kind: 'loading' })
-    try {
-      const data = await scanQrToken(
-        qrToken,
-        session.customerId,
-        session.businessId,
-      )
-      setPhase({ kind: 'success', data })
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setPhase({
-          kind: 'error',
-          code: err.code,
-          message: messageForCode(err.code),
-        })
-      } else {
-        setPhase({
-          kind: 'error',
-          code: 'network_error',
-          message: 'No se pudo conectar. Revisa tu internet.',
-        })
-      }
-    }
+  function startScanning() {
+    setCameraError(null)
+    scan.reset()
+    setScreen('scanning')
   }
 
-  if (!sessionReady) {
+  function backToIdle() {
+    scan.reset()
+    setCameraError(null)
+    setScreen('idle')
+  }
+
+  if (!isHydrated) {
     return (
       <main className="flex flex-1 items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Cargando" />
+        <Loader2
+          className="h-6 w-6 animate-spin text-muted-foreground"
+          aria-label="Cargando"
+        />
       </main>
     )
   }
@@ -99,6 +82,14 @@ export default function ScanPage() {
     )
   }
 
+  const errorMessage = cameraError
+    ? cameraError
+    : scan.isError
+      ? scan.error instanceof ApiError
+        ? messageForCode(scan.error.code)
+        : 'No se pudo conectar. Revisa tu internet.'
+      : null
+
   return (
     <main className="flex flex-1 flex-col bg-background text-foreground">
       <header className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -113,64 +104,24 @@ export default function ScanPage() {
       </header>
 
       <section className="flex flex-1 flex-col items-center justify-center px-6 py-8">
-        {phase.kind === 'idle' && (
+        {errorMessage ? (
           <div className="flex w-full max-w-sm flex-col items-center gap-6 text-center">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Listo para escanear
-            </h2>
-            <p className="text-base text-muted-foreground">
-              Apunta la camara al QR del local.
-            </p>
-            <button
-              type="button"
-              onClick={() => setPhase({ kind: 'scanning' })}
-              className="inline-flex h-14 w-full items-center justify-center rounded-md bg-primary px-6 text-lg font-medium text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              Iniciar escaner
-            </button>
-          </div>
-        )}
-
-        {phase.kind === 'scanning' && (
-          <div className="flex w-full max-w-md flex-col items-center gap-4">
-            <div className="relative w-full overflow-hidden rounded-lg border border-border bg-surface aspect-square">
-              <Scanner
-                onScan={(detectedCodes) => {
-                  const code = detectedCodes[0]?.rawValue
-                  if (code) handleDetectedToken(code)
-                }}
-                onError={(err) => {
-                  console.error('camera error', err)
-                  setPhase({
-                    kind: 'error',
-                    code: 'camera_error',
-                    message:
-                      'No pudimos abrir la camara. Revisa el permiso del navegador.',
-                  })
-                }}
-                formats={['qr_code']}
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-danger">
+              <X
+                className="h-10 w-10 text-danger-foreground"
+                aria-label="Error"
               />
             </div>
+            <p className="text-lg text-foreground">{errorMessage}</p>
             <button
               type="button"
-              onClick={() => setPhase({ kind: 'idle' })}
-              className="inline-flex h-11 items-center justify-center rounded-md border border-border bg-surface px-6 text-base text-foreground"
+              onClick={startScanning}
+              className="inline-flex h-12 w-full items-center justify-center rounded-md bg-primary px-6 text-base font-medium text-primary-foreground"
             >
-              Cancelar
+              Reintentar
             </button>
           </div>
-        )}
-
-        {phase.kind === 'loading' && (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" aria-label="Verificando" />
-            <p className="text-base text-muted-foreground">
-              Verificando tu asistencia...
-            </p>
-          </div>
-        )}
-
-        {phase.kind === 'success' && (
+        ) : scan.isSuccess ? (
           <div className="flex w-full max-w-sm flex-col items-center gap-6 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success">
               <Check
@@ -183,7 +134,7 @@ export default function ScanPage() {
             </p>
             <div className="flex flex-col items-center gap-1">
               <span className="text-5xl font-bold text-foreground">
-                {phase.data.remainingVisits}
+                {scan.data.remainingVisits}
               </span>
               <span className="text-base text-muted-foreground">
                 visitas restantes
@@ -191,29 +142,61 @@ export default function ScanPage() {
             </div>
             <button
               type="button"
-              onClick={() => setPhase({ kind: 'idle' })}
+              onClick={backToIdle}
               className="inline-flex h-12 w-full items-center justify-center rounded-md bg-primary px-6 text-base font-medium text-primary-foreground"
             >
               OK
             </button>
           </div>
-        )}
-
-        {phase.kind === 'error' && (
-          <div className="flex w-full max-w-sm flex-col items-center gap-6 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-danger">
-              <X
-                className="h-10 w-10 text-danger-foreground"
-                aria-label="Error"
+        ) : scan.isPending ? (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <Loader2
+              className="h-12 w-12 animate-spin text-primary"
+              aria-label="Verificando"
+            />
+            <p className="text-base text-muted-foreground">
+              Verificando tu asistencia...
+            </p>
+          </div>
+        ) : screen === 'scanning' ? (
+          <div className="flex w-full max-w-md flex-col items-center gap-4">
+            <div className="relative w-full overflow-hidden rounded-lg border border-border bg-surface aspect-square">
+              <Scanner
+                onScan={(detectedCodes) => {
+                  const code = detectedCodes[0]?.rawValue
+                  if (code && !scan.isPending) scan.mutate(code)
+                }}
+                onError={(err) => {
+                  console.error('camera error', err)
+                  setCameraError(
+                    'No pudimos abrir la camara. Revisa el permiso del navegador.',
+                  )
+                }}
+                formats={['qr_code']}
               />
             </div>
-            <p className="text-lg text-foreground">{phase.message}</p>
             <button
               type="button"
-              onClick={() => setPhase({ kind: 'scanning' })}
-              className="inline-flex h-12 w-full items-center justify-center rounded-md bg-primary px-6 text-base font-medium text-primary-foreground"
+              onClick={backToIdle}
+              className="inline-flex h-11 items-center justify-center rounded-md border border-border bg-surface px-6 text-base text-foreground"
             >
-              Reintentar
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <div className="flex w-full max-w-sm flex-col items-center gap-6 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Listo para escanear
+            </h2>
+            <p className="text-base text-muted-foreground">
+              Apunta la camara al QR del local.
+            </p>
+            <button
+              type="button"
+              onClick={startScanning}
+              className="inline-flex h-14 w-full items-center justify-center rounded-md bg-primary px-6 text-lg font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Iniciar escaner
             </button>
           </div>
         )}

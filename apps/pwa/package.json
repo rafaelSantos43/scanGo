@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@scango/shared-types": "workspace:*",
+    "@tanstack/react-query": "^5.100.10",
     "@yudiel/react-qr-scanner": "^2.6.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",

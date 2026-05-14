@@ -70,6 +70,32 @@ Solo en el dashboard del negocio. Suscribirse a la tabla `attendances` filtrada 
 - Tipografía: una sola fuente sans-serif (system stack o Inter). Sin mezclas.
 - Espaciado: múltiplos de 4 (Tailwind default). Sin números arbitrarios tipo `mt-[13px]`.
 
+### 3.9 State management — server state vs client state
+
+Decisión global del proyecto (orquestador, 2026-05-14): **no se permiten `useEffect` para hacer fetch**. La motivación es evitar el reguero de efectos sincronizando estados de carga/error/cache repetidos en cada componente.
+
+**Server state — datos que vienen del backend:**
+
+- **TanStack Query (`@tanstack/react-query`)** es la herramienta estándar. Ya está instalada en `apps/web` y `apps/pwa`, con `<Providers>` que monta `<QueryClientProvider>` en cada `layout.tsx`.
+- Lecturas: `useQuery({ queryKey, queryFn })`. Si necesitas polling, usa `refetchInterval`, no `setInterval` propio.
+- Mutaciones: `useMutation({ mutationFn })`. Llama `mutate(payload)` desde el handler; lee `isPending`/`isSuccess`/`isError`/`data`/`error` para los 4 estados.
+- Defaults configurados en `Providers`: `staleTime: 30_000`, `refetchOnWindowFocus: false`, `retry: 1` para queries, `retry: 0` para mutations. Sobreescríbelos sólo cuando lo justifiques.
+- **Nunca** uses `useEffect` con `fetch` dentro. Si te encuentras escribiéndolo, conviértelo a `useQuery`.
+
+**Client state — UI local:**
+
+- `useState` para estado contenido en un componente (toggle de modal, valor de un input controlado, fase de un wizard).
+- React Context para estado compartido entre rama del árbol (sesión/auth, tema, idioma). Hoy hay dos providers en uso:
+  - `apps/pwa/src/lib/session-context.tsx` exporta `SessionProvider` + `useSession()` (cliente final, `customerId` + `businessId`).
+  - `apps/web/src/lib/dashboard-session-context.tsx` exporta `DashboardSessionProvider` + `useDashboardSession()` (admin/integrador, `businessId`).
+- **Cero** Zustand/Jotai/Redux en v1. Si aparece un caso real que Context no resuelve, escalar al orquestador.
+
+**Server Components + Server Actions (apps/web dashboard):**
+
+Per §3.4, el dashboard del negocio invoca use cases directo desde server components vía la `composition.ts` de `apps/web/src/infrastructure`. Eso elimina por completo la necesidad de fetch desde el cliente para vistas estáticas. Usa Server Components por default; solo añade `'use client'` cuando necesites estado o eventos del browser.
+
+**Resumen ejecutivo:** server state → TanStack Query. Sesión/auth → React Context. UI local → `useState`. Server Components donde se pueda. Si un componente tiene 3+ `useEffect`, está mal diseñado — revisarlo con el orquestador.
+
 ### 3.8 Hooks de React: primero arquitectura, luego optimización
 
 Cuando aparezca la tentación de usar `useMemo`, `useCallback`, `useRef`, `useReducer`, custom hooks complejos, o cualquier hook más allá de `useState` y `useEffect` básicos, **detenerse** y atacar el problema desde arriba antes de alcanzar el hook.
@@ -137,7 +163,7 @@ Para cada tarea, este agent entrega:
 
 | Anti-patrón | Por qué |
 |---|---|
-| `useEffect` para fetch en mount | Usar server components o `use` con suspense. Si es PWA cliente, usar SWR/TanStack Query — coordinar elección con el orquestador antes. |
+| `useEffect` para fetch en mount | Prohibido. Usar TanStack Query (`useQuery`/`useMutation`) o server components/actions (dashboard). Ver §3.9. |
 | `useMemo`/`useCallback` sin medición previa que justifique la necesidad | Ver §3.8. Default = no usarlos. La memoización sin métrica es cargo cult, agrega complejidad sin valor probado. |
 | Custom hook usado en un solo componente "para limpiar" | Si el componente está sucio, dividir el componente, no esconder lógica detrás de un hook que nadie más reutiliza. |
 | `console.log` dejado en componentes | Limpiar antes de entregar. |

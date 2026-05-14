@@ -54,9 +54,10 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 ## UI (M1)
 
 - [x] Sistema de paleta swappable en ambas apps: tokens `@theme` de Tailwind v4 en `globals.css`. Cero hex/primitivos en componentes. Cambiar `--color-*` actualiza todas las pantallas.
-- [x] `apps/pwa` — pantalla `/scan` con `@yudiel/react-qr-scanner`, 5 fases (idle/scanning/loading/success/error), mensajes específicos por código de error del backend.
+- [x] `apps/pwa` — pantalla `/scan` con `@yudiel/react-qr-scanner`, mensajes específicos por código de error del backend.
 - [x] `apps/pwa` — landing `/` con mini-form que persiste `customerId` + `businessId` en localStorage (stub hasta auth real).
-- [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`, polling cada 30s a `/v1/qr/generate`, 4 estados.
+- [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`, polling cada 30s a `/v1/qr/generate`.
+- [x] State management: TanStack Query (server) + React Context (session) + Server Components donde se pueda. Convención registrada en [`docs/agents/agent_ui_ux.md`](docs/agents/agent_ui_ux.md) §3.9. Cero `useEffect` para fetching en todo el código de UI.
 - [ ] Manifest PWA + service worker (`next-pwa`) en `apps/pwa`
 - [ ] Dashboard del negocio (lista de asistencias, gestión de clientes, etc.) — fuera de scope hasta auth real
 

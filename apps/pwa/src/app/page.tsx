@@ -1,53 +1,39 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { readSession, writeSession, clearSession } from '@/lib/session'
+import { useState } from 'react'
+import { useSession } from '@/lib/session-context'
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export default function Home() {
-  const [ready, setReady] = useState(false)
-  const [hasSession, setHasSession] = useState(false)
-  const [customerId, setCustomerId] = useState('')
-  const [businessId, setBusinessId] = useState('')
+  const { session, isHydrated, setSession, clear } = useSession()
+  const [customerIdInput, setCustomerIdInput] = useState('')
+  const [businessIdInput, setBusinessIdInput] = useState('')
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const s = readSession()
-    if (s) {
-      setHasSession(true)
-      setCustomerId(s.customerId)
-      setBusinessId(s.businessId)
-    }
-    setReady(true)
-  }, [])
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    const c = customerId.trim()
-    const b = businessId.trim()
+    const c = customerIdInput.trim()
+    const b = businessIdInput.trim()
     if (!UUID_RE.test(c) || !UUID_RE.test(b)) {
       setError('Ambos identificadores deben ser UUIDs validos.')
       return
     }
-    writeSession({ customerId: c, businessId: b })
+    setSession({ customerId: c, businessId: b })
     setError(null)
-    setHasSession(true)
+    setCustomerIdInput('')
+    setBusinessIdInput('')
   }
 
-  function handleSignOut() {
-    clearSession()
-    setHasSession(false)
-    setCustomerId('')
-    setBusinessId('')
-  }
-
-  if (!ready) {
+  if (!isHydrated) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-16 bg-background text-foreground">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary" aria-label="Cargando" />
+        <div
+          className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary"
+          aria-label="Cargando"
+        />
       </main>
     )
   }
@@ -62,7 +48,7 @@ export default function Home() {
           </p>
         </header>
 
-        {hasSession ? (
+        {session ? (
           <div className="flex flex-col gap-4">
             <Link
               href="/scan"
@@ -72,7 +58,7 @@ export default function Home() {
             </Link>
             <button
               type="button"
-              onClick={handleSignOut}
+              onClick={clear}
               className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
             >
               Cerrar sesion
@@ -92,8 +78,8 @@ export default function Home() {
               <input
                 id="customerId"
                 type="text"
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
+                value={customerIdInput}
+                onChange={(e) => setCustomerIdInput(e.target.value)}
                 placeholder="00000000-0000-0000-0000-000000000000"
                 className="h-11 rounded-md border border-border bg-surface px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 autoComplete="off"
@@ -106,8 +92,8 @@ export default function Home() {
               <input
                 id="businessId"
                 type="text"
-                value={businessId}
-                onChange={(e) => setBusinessId(e.target.value)}
+                value={businessIdInput}
+                onChange={(e) => setBusinessIdInput(e.target.value)}
                 placeholder="00000000-0000-0000-0000-000000000000"
                 className="h-11 rounded-md border border-border bg-surface px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 autoComplete="off"
