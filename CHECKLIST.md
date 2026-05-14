@@ -30,7 +30,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 
 - [x] Entidades del dominio del flujo de escaneo (Business, Customer, Package, QrToken, Attendance) — 58 tests verdes
 - [ ] Entidades restantes (BusinessAdmin, ApiKey, WebhookSubscription, WebhookDelivery)
-- [ ] Schemas Zod en `packages/shared-types`
+- [x] Schemas Zod en `packages/shared-types` (parcial: `ScanRequest`/`ScanResponse` + envelopes de éxito/error). Resto a medida que crezcan los endpoints.
 - [x] Migración inicial Drizzle (`0000_init_scan_flow.sql`) + políticas RLS para las 5 tablas del flujo de escaneo (D-007)
 - [x] Repositorios Drizzle del flujo de escaneo (5 mappers + 5 repos + composition factories)
 - [ ] Repositorios Drizzle del resto (ApiKey, BusinessAdmin, WebhookSubscription, WebhookDelivery)
@@ -50,9 +50,9 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 
 ## Cross-cutting (cuando aplique)
 
-- [ ] Auth provider (`SupabaseAuthProvider` — único punto que importa SDK Supabase)
+- [ ] Auth provider (`SupabaseAuthProvider` — único punto que importa SDK Supabase). Hoy `apps/web/src/app/api/_lib/authContext.ts` usa un stub temporal con headers `X-Customer-Id` / `X-Business-Id` — marcado TODO(auth)
 - [ ] Tabla `webhook_deliveries` + Vercel Cron dispatcher (D-006)
-- [ ] API REST pública v1 bajo `/api/v1/...`
+- [x] API REST pública v1 bajo `/api/v1/...` (parcial: `POST /v1/scan` + error mapper §9.3)
 - [ ] SDK `@scango/sdk` consumiendo API REST
 - [ ] PWA consumiendo `@scango/sdk` (dogfooding)
 - [ ] Dashboard del negocio en `apps/web`

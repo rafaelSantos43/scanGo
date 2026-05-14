@@ -1,1 +1,30 @@
-export {};
+import { z } from "zod"
+
+export const uuid = z.string().uuid()
+
+export const ScanRequestSchema = z.object({
+  qrToken: uuid,
+})
+export type ScanRequest = z.infer<typeof ScanRequestSchema>
+
+export const ScanResponseSchema = z.object({
+  attendanceId: uuid,
+  packageId: uuid,
+  remainingVisits: z.number().int().nonnegative(),
+  packageStatus: z.enum(["active", "depleted", "expired"]),
+  scannedAt: z.string().datetime(),
+  scannedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+})
+export type ScanResponse = z.infer<typeof ScanResponseSchema>
+
+export const SuccessEnvelopeSchema = <T extends z.ZodTypeAny>(data: T) =>
+  z.object({ data })
+
+export const ErrorPayloadSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  details: z.record(z.unknown()).optional(),
+})
+export const ErrorEnvelopeSchema = z.object({ error: ErrorPayloadSchema })
+export type ErrorPayload = z.infer<typeof ErrorPayloadSchema>
+export type ErrorEnvelope = z.infer<typeof ErrorEnvelopeSchema>
