@@ -19,8 +19,8 @@ Estado vivo y razonado en [`docs/ENGRAM.md`](./docs/ENGRAM.md).
 - [x] Stub de `packages/sdk` (`@scango/sdk`)
 - [x] Stub de `packages/react` (`@scango/react`)
 - [x] Placeholder de `examples/external-app` (scaffold completo diferido hasta tener componentes en `@scango/react`)
-- [ ] Drizzle ORM en `apps/web` (`bun add drizzle-orm`, config inicial)
-- [ ] `bunx drizzle-kit` setup (`drizzle.config.ts`, carpeta de migraciones)
+- [x] Drizzle ORM en `apps/web` (`drizzle-orm` + `postgres` + `drizzle-kit`)
+- [x] `bunx drizzle-kit` setup (`drizzle.config.ts`, carpeta de migraciones)
 - [ ] Esqueleto de Clean Architecture en `apps/web/src` (carpetas vacías: `domain/`, `application/`, `infrastructure/`, `presentation/`)
 - [ ] `composition.ts` con factories `buildXxx()` vacío (ver D-005)
 
