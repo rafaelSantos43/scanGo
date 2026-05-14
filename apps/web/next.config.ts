@@ -1,7 +1,21 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
+import { networkInterfaces } from 'node:os'
+
+// Detecta las IPs IPv4 de la maquina para que puedas abrir el dashboard
+// (ej. /scan-display) desde una tablet en la misma red sin que Next.js
+// la bloquee. Solo aplica en dev — produccion sirve detras de un dominio.
+function lanOrigins(): string[] {
+  const out: string[] = []
+  for (const ifaces of Object.values(networkInterfaces())) {
+    for (const i of ifaces ?? []) {
+      if (i.family === 'IPv4' && !i.internal) out.push(i.address)
+    }
+  }
+  return out
+}
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  allowedDevOrigins: lanOrigins(),
+}
 
-export default nextConfig;
+export default nextConfig

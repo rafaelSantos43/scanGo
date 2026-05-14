@@ -12,6 +12,8 @@
   "scripts": {
     "dev:web": "bun --filter @scango/web dev",
     "dev:pwa": "bun --filter @scango/pwa dev",
+    "dev:web:https": "bun --filter @scango/web dev:https",
+    "dev:pwa:https": "bun --filter @scango/pwa dev:https",
     "build": "bun --filter '*' build",
     "typecheck": "bun --filter '*' typecheck",
     "lint": "bun --filter '*' lint",
