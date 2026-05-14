@@ -1,0 +1,19 @@
+{
+  "name": "@scango/shared-types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "bun-types": "^1.3.0",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "@scango/example-external-app",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Next.js de prueba integrando @scango/react. Scaffold completo diferido hasta que @scango/react tenga componentes consumibles."
+}
