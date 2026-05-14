@@ -43,7 +43,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [ ] Use cases CU-01: `RegisterBusiness` (bloqueado hasta auth: requiere `BusinessAdmin` + `ApiKey`)
 - [x] Use case `GenerateQr` + endpoint `POST /v1/qr/generate` (sirve también el caso "rotate": el frontend llama otra vez para obtener un QR nuevo)
 - [ ] Use cases restantes: `UpdateCustomer`, `DisableCustomer`, `ListAttendances`, `IssueApiKey`, `RevokeApiKey`, `CreateWebhookSubscription`, `DeliverWebhook` (cron)
-- [ ] Aplicar la migración a una DB real (Supabase staging) — bloqueado hasta tener `DATABASE_URL` configurada
+- [x] Tooling listo para aplicar la migración: scripts `db:migrate`, `db:seed`, `db:studio` en `apps/web/package.json`. Seed script idempotente en `apps/web/scripts/seed.ts`. Guía paso a paso en [`docs/DATABASE_SETUP.md`](docs/DATABASE_SETUP.md). El usuario es quien crea la Supabase y corre `db:migrate`.
 - [ ] Tests unitarios con `bun test` (parcial: dominio del flujo de escaneo cubierto)
 - [ ] Tests de integración con `@testcontainers/postgresql`
 

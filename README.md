@@ -94,6 +94,12 @@ Lee [`docs/RULES.md`](./docs/RULES.md) entero antes de tu primer commit. Resumen
 
 ---
 
+## Conectar a una base de datos real
+
+Ver [`docs/DATABASE_SETUP.md`](./docs/DATABASE_SETUP.md) para los pasos: crear proyecto en Supabase, configurar `apps/web/.env.local`, aplicar la migración inicial, sembrar datos de prueba y probar el flujo de escaneo end-to-end (con UI o con `curl`).
+
+---
+
 ## Estado del proyecto
 
 Ver [`docs/ENGRAM.md`](./docs/ENGRAM.md) para el estado vivo: qué se decidió, qué está en progreso, qué bloqueadores hay.
