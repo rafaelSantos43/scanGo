@@ -21,8 +21,8 @@ Estado vivo y razonado en [`docs/ENGRAM.md`](./docs/ENGRAM.md).
 - [x] Placeholder de `examples/external-app` (scaffold completo diferido hasta tener componentes en `@scango/react`)
 - [x] Drizzle ORM en `apps/web` (`drizzle-orm` + `postgres` + `drizzle-kit`)
 - [x] `bunx drizzle-kit` setup (`drizzle.config.ts`, carpeta de migraciones)
-- [ ] Esqueleto de Clean Architecture en `apps/web/src` (carpetas vacías: `domain/`, `application/`, `infrastructure/`, `presentation/`)
-- [ ] `composition.ts` con factories `buildXxx()` vacío (ver D-005)
+- [x] Esqueleto de Clean Architecture en `apps/web/src` (`domain/`, `application/`, `infrastructure/`; `src/app/` cumple rol de presentation — ver D-015)
+- [x] `composition.ts` placeholder en `infrastructure/` (ver D-005)
 
 ## Fase M1 — Modelado del dominio
 

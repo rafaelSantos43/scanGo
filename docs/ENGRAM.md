@@ -15,7 +15,7 @@
 ## 1. Última actualización
 
 **Fecha:** 2026-05-14
-**Cambio:** v1.2 — Añadidas D-013 (soporte cross-platform Mac/Windows) y D-014 (stack migrado a Bun: runtime + package manager + test runner). Docs sincronizados (ARCHITECTURE v1.3, RULES v1.3, agent_testing actualizado). Próximo paso: setup del monorepo con Bun.
+**Cambio:** v1.3 — Añadida D-015 (`src/app/` cumple rol de presentation en `apps/web`, no se renombra a `presentation/`). Avance de Fase A: monorepo completo (`@scango/web`, `@scango/pwa`, `@scango/shared-types`, `@scango/sdk`, `@scango/react`, `@scango/example-external-app` placeholder), Drizzle ORM 0.45.2 + postgres-js 3.4.9 + drizzle-kit 0.31.10 instalados en `apps/web`, esqueleto Clean Architecture creado (`domain/`, `application/`, `infrastructure/`). Próximo paso: M1 — modelar entidades del dominio.
 
 ---
 
@@ -174,6 +174,15 @@ Cada entrada sigue el formato de §2.8 de RULES global: decisión + alternativas
 - **Trigger para revisar:** bug oscuro irresoluble en Next.js + Bun runtime, o problemas serios en Windows.
 - **Donde queda:** ARCHITECTURE §4 (stack table), §5 (monorepo con Bun workspaces), §11.0 (bun test), §12.3 (bunx drizzle-kit); RULES §2.3 (stack obligatorio); agent_testing.md §2 (runner); agent_data.md §6 y agent_ui_ux.md §5 (entregables con `bun run typecheck`).
 
+### D-015 — `src/app/` ES la capa presentation (no se renombra)
+- **Fecha:** 2026-05-14
+- **Decisión:** En `apps/web`, el directorio `src/app/` que requiere Next.js App Router cumple el rol de la capa **presentation** de Clean Architecture. Las capas `domain/`, `application/`, `infrastructure/` viven como hermanas de `app/` bajo `src/`. La doc ARCHITECTURE §5 (que muestra `presentation/api/v1/route.ts`) se interpreta como vista lógica, no literal.
+- **Alternativas:** (A) mover `src/app/` a `src/presentation/app/` y overridear la convención de Next.js — pelea contra el framework, riesgo en upgrades; (B) actualizar ARCHITECTURE §5 para reflejar `app/` literal — limpio pero requiere editar la doc estable.
+- **Por qué:** Next.js 16 espera `src/app/` o `app/` para el App Router. Renombrar requiere config experimental que no es estable, complica errores y rompe en upgrades del framework. Aceptar la convención cuesta cero, los archivos `route.ts` y `page.tsx` ya viven en Next.js de forma idéntica a como la doc los describe — solo cambia la carpeta padre.
+- **Qué se pierde:** la doc §5 queda con una etiqueta ligeramente inexacta (`presentation/` en vez de `app/`). Riesgo bajo si quien la lee asume "presentation = app/ en Next.js".
+- **Trigger para revisar:** si se migra a un framework que sí permita renombrar el dir (Remix, vanilla Node, etc.), volver a evaluar.
+- **Donde queda:** `apps/web/src/` (estructura física), este archivo. Pendiente: aclarar §5 en una próxima pasada del ARCHITECTURE.
+
 ---
 
 ## 4. Blockers y ambigüedades pendientes
@@ -260,3 +269,4 @@ Cosas que cristalizaron y deberían respetarse implícitamente:
 | 1.0 | 2026-05-14 | Creación inicial. 10 decisiones (D-001 a D-010), 5 hallazgos (H-001 a H-005), 0 blockers. |
 | 1.1 | 2026-05-14 | Auditoría aplicada (5 hallazgos). Críticos: versión de RULES.md sincronizada (v1.1 → v1.2), emojis ✅ eliminados de §2.2 por consistencia con RULES global §6. Medios: añadidas D-011 (recortes anti-sobreingeniería al pasar de v1 inflado de 8 semanas a v1 enfocado de ~16-18 días) y D-012 (modelo orquestador + 3 sub-agentes especializados). Bajo: H-005 (UUID v7 no nativo en Postgres <17) eliminado por ser nota técnica, no hallazgo no obvio del diseño. Resultado: 12 decisiones, 4 hallazgos, 0 blockers. |
 | 1.2 | 2026-05-14 | Añadidas D-013 (soporte cross-platform Mac + Windows desde día 1: `.gitattributes`, `.editorconfig`, case-sensitivity en imports, scripts portables) y D-014 (stack migrado de Node+pnpm+vitest a Bun 1.3+ para runtime + package manager + test runner, motivado por experiencia del usuario con Bun y bloqueo de permisos para pnpm). Docs sincronizados: ARCHITECTURE v1.3, RULES v1.3, agent_testing actualizado para `bun test`, agent_data/agent_ui_ux con `bun run typecheck`. §2.4 actualizado con plan de Fase A (setup monorepo). Resultado: 14 decisiones, 4 hallazgos, 0 blockers. |
+| 1.3 | 2026-05-14 | Añadida D-015 (`src/app/` cumple rol de presentation en Next.js App Router, no se renombra a `presentation/`; doc §5 se interpreta lógicamente). Fase A casi completa: monorepo con 5 workspaces activos + 1 placeholder, Drizzle ORM/postgres-js/drizzle-kit instalados, esqueleto Clean Architecture creado en `apps/web/src/{domain,application,infrastructure}`. Pendiente solo afinar ARCHITECTURE §5 en una próxima pasada. Resultado: 15 decisiones, 4 hallazgos, 0 blockers. |
