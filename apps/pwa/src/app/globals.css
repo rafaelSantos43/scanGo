@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Sistema de colores swappable. Para rebrandear o cambiar la paleta entera,
+ * editar SOLO las variables de este bloque. Los componentes consumen las
+ * utilities derivadas (bg-primary, text-foreground, border-border, etc.) que
+ * Tailwind v4 genera automaticamente a partir de las variables --color-*.
+ */
+@theme {
+  /* Marca primaria — la "tinta" del producto. */
+  --color-primary: oklch(0.62 0.18 250);
+  --color-primary-foreground: oklch(0.98 0 0);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Superficies de UI. */
+  --color-background: oklch(0.99 0 0);
+  --color-foreground: oklch(0.18 0 0);
+  --color-surface: oklch(0.97 0 0);
+  --color-surface-foreground: oklch(0.18 0 0);
+  --color-muted: oklch(0.94 0 0);
+  --color-muted-foreground: oklch(0.45 0 0);
+  --color-border: oklch(0.90 0 0);
+
+  /* Estados. */
+  --color-success: oklch(0.65 0.18 145);
+  --color-success-foreground: oklch(0.98 0 0);
+  --color-danger: oklch(0.60 0.22 25);
+  --color-danger-foreground: oklch(0.98 0 0);
+  --color-warning: oklch(0.78 0.15 80);
+  --color-warning-foreground: oklch(0.18 0 0);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
 }

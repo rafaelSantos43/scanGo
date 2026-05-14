@@ -51,6 +51,15 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 
 - [ ] Alinear `apps/web/tsconfig.json` para extender `tsconfig.base.json` (hoy es el default de `bun create next-app`, no comparte la strictness del base — `noUncheckedIndexedAccess`, `noImplicitOverride`, etc.)
 
+## UI (M1)
+
+- [x] Sistema de paleta swappable en ambas apps: tokens `@theme` de Tailwind v4 en `globals.css`. Cero hex/primitivos en componentes. Cambiar `--color-*` actualiza todas las pantallas.
+- [x] `apps/pwa` — pantalla `/scan` con `@yudiel/react-qr-scanner`, 5 fases (idle/scanning/loading/success/error), mensajes específicos por código de error del backend.
+- [x] `apps/pwa` — landing `/` con mini-form que persiste `customerId` + `businessId` en localStorage (stub hasta auth real).
+- [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`, polling cada 30s a `/v1/qr/generate`, 4 estados.
+- [ ] Manifest PWA + service worker (`next-pwa`) en `apps/pwa`
+- [ ] Dashboard del negocio (lista de asistencias, gestión de clientes, etc.) — fuera de scope hasta auth real
+
 ## Cross-cutting (cuando aplique)
 
 - [ ] Auth provider (`SupabaseAuthProvider` — único punto que importa SDK Supabase). Hoy `apps/web/src/app/api/_lib/authContext.ts` usa un stub temporal con headers `X-Customer-Id` / `X-Business-Id` — marcado TODO(auth)
