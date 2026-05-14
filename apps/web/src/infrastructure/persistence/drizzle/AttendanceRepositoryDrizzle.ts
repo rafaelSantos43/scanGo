@@ -5,15 +5,9 @@ import type { BusinessId } from '@/domain/value-objects/ids'
 import type { DbOrTx } from './client'
 import { AttendanceMapper } from './mappers/AttendanceMapper'
 import { attendances } from './schema'
+import { isUniqueViolation } from './_lib/pgErrors'
 
-const PG_UNIQUE_VIOLATION = '23505'
 const DOUBLE_SCAN_CONSTRAINT = 'attendances_no_double_scan_per_day'
-
-function isUniqueViolation(err: unknown, constraint: string): boolean {
-  if (err === null || typeof err !== 'object') return false
-  const e = err as { code?: unknown; constraint_name?: unknown }
-  return e.code === PG_UNIQUE_VIOLATION && e.constraint_name === constraint
-}
 
 export class AttendanceRepositoryDrizzle implements AttendanceRepository {
   constructor(private readonly db: DbOrTx) {}

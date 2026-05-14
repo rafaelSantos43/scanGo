@@ -3,19 +3,26 @@ import type { ErrorEnvelope } from '@scango/shared-types'
 import { DomainError } from '@/domain/errors/DomainError'
 import { AlreadyScannedTodayError } from '@/domain/errors/AlreadyScannedTodayError'
 import { BusinessNotFoundError } from '@/domain/errors/BusinessNotFoundError'
+import { CustomerAlreadyHasActivePackageError } from '@/domain/errors/CustomerAlreadyHasActivePackageError'
 import { CustomerDisabledError } from '@/domain/errors/CustomerDisabledError'
+import { CustomerEmailAlreadyExistsError } from '@/domain/errors/CustomerEmailAlreadyExistsError'
 import { CustomerNotFoundError } from '@/domain/errors/CustomerNotFoundError'
 import { InvalidEmailError } from '@/domain/errors/InvalidEmailError'
 import { InvalidIdError } from '@/domain/errors/InvalidIdError'
 import { InvalidSlugError } from '@/domain/errors/InvalidSlugError'
 import { InvalidTimezoneError } from '@/domain/errors/InvalidTimezoneError'
+import { InvalidVisitCountError } from '@/domain/errors/InvalidVisitCountError'
 import { NegativeVisitCountError } from '@/domain/errors/NegativeVisitCountError'
 import { NoActivePackageError } from '@/domain/errors/NoActivePackageError'
 import { PackageDepletedError } from '@/domain/errors/PackageDepletedError'
 import { QrTokenAlreadyUsedError } from '@/domain/errors/QrTokenAlreadyUsedError'
 import { QrTokenExpiredError } from '@/domain/errors/QrTokenExpiredError'
 import { QrTokenNotFoundError } from '@/domain/errors/QrTokenNotFoundError'
-import { UnauthenticatedCustomerError } from './authContext'
+import {
+  UnauthenticatedAdminError,
+  UnauthenticatedCustomerError,
+} from './authContext'
+import { UnauthenticatedBusinessError } from './businessAuthContext'
 
 export interface MappedError {
   status: number
@@ -44,6 +51,10 @@ function mapDomainError(err: DomainError): DomainMapEntry | null {
     return { status: 403, code: 'customer_disabled' }
   if (err instanceof BusinessNotFoundError)
     return { status: 404, code: 'business_not_found' }
+  if (err instanceof CustomerEmailAlreadyExistsError)
+    return { status: 409, code: 'customer_email_already_exists' }
+  if (err instanceof CustomerAlreadyHasActivePackageError)
+    return { status: 409, code: 'customer_already_has_active_package' }
   if (err instanceof QrTokenNotFoundError)
     return { status: 422, code: 'qr_token_not_found' }
   if (err instanceof QrTokenExpiredError)
@@ -56,6 +67,8 @@ function mapDomainError(err: DomainError): DomainMapEntry | null {
     return { status: 400, code: 'invalid_slug' }
   if (err instanceof InvalidTimezoneError)
     return { status: 400, code: 'invalid_timezone' }
+  if (err instanceof InvalidVisitCountError)
+    return { status: 400, code: 'invalid_visit_count' }
   if (err instanceof NegativeVisitCountError)
     return { status: 400, code: 'negative_visit_count' }
   // InvalidIdError generado desde branded constructors en el handler (auth o
@@ -67,29 +80,34 @@ function mapDomainError(err: DomainError): DomainMapEntry | null {
 }
 
 export function mapErrorToHttp(err: unknown): MappedError {
-  if (err instanceof UnauthenticatedCustomerError) {
+  if (
+    err instanceof UnauthenticatedCustomerError ||
+    err instanceof UnauthenticatedAdminError ||
+    err instanceof UnauthenticatedBusinessError
+  ) {
     return {
       status: 401,
       body: {
         error: {
           code: 'unauthenticated',
-          message: 'Missing or invalid customer credentials',
+          message: 'Missing or invalid credentials',
         },
       },
     }
   }
 
-  // Un InvalidIdError originado en `getCustomerAuthContext` significa que el
-  // header `X-Customer-Id` o `X-Business-Id` traia un UUID malformado. A
-  // efectos del cliente equivale a "no autenticado", no a un input invalido,
-  // porque la credencial es lo que esta corrupto.
+  // Un InvalidIdError originado en `getCustomerAuthContext` o
+  // `getAdminAuthContext` significa que algun header de credencial
+  // (`X-Customer-Id`, `X-User-Id`, `X-Business-Id`) traia un UUID malformado.
+  // A efectos del cliente equivale a "no autenticado", no a un input
+  // invalido, porque la credencial es lo que esta corrupto.
   if (err instanceof InvalidIdError) {
     return {
       status: 401,
       body: {
         error: {
           code: 'unauthenticated',
-          message: 'Missing or invalid customer credentials',
+          message: 'Missing or invalid credentials',
         },
       },
     }

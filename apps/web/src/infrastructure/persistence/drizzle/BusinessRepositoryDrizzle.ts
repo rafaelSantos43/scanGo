@@ -30,4 +30,25 @@ export class BusinessRepositoryDrizzle implements BusinessRepository {
       .limit(1)
     return rows[0] ? BusinessMapper.toDomain(rows[0]) : null
   }
+
+  async save(business: Business, businessId: BusinessId): Promise<void> {
+    if (business.id !== businessId) {
+      throw new Error('Business id does not match expected businessId')
+    }
+    const row = BusinessMapper.toPersistence(business)
+    await this.db
+      .insert(businesses)
+      .values(row)
+      .onConflictDoUpdate({
+        target: businesses.id,
+        set: {
+          name: row.name,
+          type: row.type,
+          timezone: row.timezone,
+        },
+      })
+    // Slug unique violation no se mapea aqui: el slug solo se asigna en
+    // RegisterBusiness (futuro). Si surge una colision por slug, propaga
+    // el error de Postgres y RegisterBusiness la mapeara cuando exista.
+  }
 }

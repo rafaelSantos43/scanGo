@@ -1,4 +1,14 @@
 import {
+  AssignPackageUseCase,
+  type AssignPackageInput,
+  type AssignPackageResult,
+} from '@/application/use-cases/AssignPackage'
+import {
+  CreateCustomerUseCase,
+  type CreateCustomerInput,
+  type CreateCustomerResult,
+} from '@/application/use-cases/CreateCustomer'
+import {
   RegisterAttendanceUseCase,
   type RegisterAttendanceInput,
   type RegisterAttendanceResult,
@@ -53,6 +63,36 @@ export async function runRegisterAttendance(
       new PackageRepositoryDrizzle(tx),
       new AttendanceRepositoryDrizzle(tx),
       new QrTokenRepositoryDrizzle(tx),
+      new SystemClock(),
+      new UuidGenerator(),
+    )
+    return useCase.execute(input)
+  })
+}
+
+export async function runCreateCustomer(
+  input: CreateCustomerInput,
+): Promise<CreateCustomerResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new CreateCustomerUseCase(
+      new BusinessRepositoryDrizzle(tx),
+      new CustomerRepositoryDrizzle(tx),
+      new SystemClock(),
+      new UuidGenerator(),
+    )
+    return useCase.execute(input)
+  })
+}
+
+export async function runAssignPackage(
+  input: AssignPackageInput,
+): Promise<AssignPackageResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new AssignPackageUseCase(
+      new CustomerRepositoryDrizzle(tx),
+      new PackageRepositoryDrizzle(tx),
       new SystemClock(),
       new UuidGenerator(),
     )

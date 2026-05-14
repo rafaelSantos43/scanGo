@@ -6,6 +6,11 @@ export interface PackageRepository {
     customerId: CustomerId,
     businessId: BusinessId,
   ): Promise<Package | null>
+  /**
+   * Persiste un paquete nuevo. Lanza CustomerAlreadyHasActivePackageError
+   * si el cliente ya tiene un paquete con status='active' (partial unique
+   * index one_active_package_per_customer).
+   */
   save(pkg: Package, businessId: BusinessId): Promise<void>
   // Decrementa atomicamente remaining_visits y transiciona a 'depleted'
   // cuando llega a 0. Devuelve null si el paquete ya estaba en 0

@@ -1,10 +1,14 @@
 import type { Package } from '@/domain/entities/Package'
 import type { PackageRepository } from '@/domain/repositories/PackageRepository'
+import { CustomerAlreadyHasActivePackageError } from '@/domain/errors/CustomerAlreadyHasActivePackageError'
 import type { BusinessId, CustomerId, PackageId } from '@/domain/value-objects/ids'
 import { and, eq, gt, sql } from 'drizzle-orm'
 import type { DbOrTx } from './client'
 import { PackageMapper } from './mappers/PackageMapper'
 import { packages } from './schema'
+import { isUniqueViolation } from './_lib/pgErrors'
+
+const ACTIVE_PACKAGE_CONSTRAINT = 'one_active_package_per_customer'
 
 export class PackageRepositoryDrizzle implements PackageRepository {
   constructor(private readonly db: DbOrTx) {}
@@ -32,17 +36,14 @@ export class PackageRepositoryDrizzle implements PackageRepository {
       throw new Error('Package businessId does not match expected businessId')
     }
     const row = PackageMapper.toPersistence(pkg)
-    await this.db
-      .insert(packages)
-      .values(row)
-      .onConflictDoUpdate({
-        target: packages.id,
-        set: {
-          remainingVisits: row.remainingVisits,
-          status: row.status,
-          expiresAt: row.expiresAt,
-        },
-      })
+    try {
+      await this.db.insert(packages).values(row)
+    } catch (err) {
+      if (isUniqueViolation(err, ACTIVE_PACKAGE_CONSTRAINT)) {
+        throw new CustomerAlreadyHasActivePackageError(pkg.customerId)
+      }
+      throw err
+    }
   }
 
   async decrementVisitAtomic(
