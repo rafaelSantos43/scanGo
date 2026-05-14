@@ -29,7 +29,8 @@ Estado vivo y razonado en [`docs/ENGRAM.md`](./docs/ENGRAM.md).
 Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) §6.
 
 - [x] Entidades del dominio del flujo de escaneo (Business, Customer, Package, QrToken, Attendance) — 58 tests verdes
-- [ ] Entidades restantes (BusinessAdmin, ApiKey, WebhookSubscription, WebhookDelivery)
+- [x] `BusinessAdmin` entity + repo + tabla + RLS (Phase 1 auth)
+- [ ] Entidades restantes (ApiKey, WebhookSubscription, WebhookDelivery)
 - [x] Schemas Zod en `packages/shared-types` (parcial: `ScanRequest`/`ScanResponse` + envelopes de éxito/error). Resto a medida que crezcan los endpoints.
 - [x] Migración inicial Drizzle (`0000_init_scan_flow.sql`) + políticas RLS para las 5 tablas del flujo de escaneo (D-007)
 - [x] Repositorios Drizzle del flujo de escaneo (5 mappers + 5 repos + composition factories)
@@ -64,7 +65,10 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 
 ## Cross-cutting (cuando aplique)
 
-- [ ] Auth provider (`SupabaseAuthProvider` — único punto que importa SDK Supabase). Hoy `apps/web/src/app/api/_lib/authContext.ts` usa un stub temporal con headers `X-Customer-Id` / `X-Business-Id` — marcado TODO(auth)
+- [x] Auth Phase 1: `AuthProvider` interface en dominio + `SupabaseAuthProvider` (único archivo que importa `@supabase/supabase-js`). Errores tipados: `UnauthenticatedError`, `InvalidCredentialsError`, `EmailAlreadyRegisteredError`, `InvalidMagicLinkError`. Migración `0001_auth_business_admins.sql` con RLS lista para aplicar.
+- [ ] Auth Phase 2: endpoints + UI de login admin (magic link → callback → session cookie) y reemplazar `getAdminAuthContext` stub
+- [ ] Auth Phase 3: customer magic link con `businessId` en el payload (multi-tenant §8.2) + reemplazar `getCustomerAuthContext` stub
+- [ ] Auth Phase 4: API keys (`ApiKey` entity + argon2 + `IssueApiKey`/`RevokeApiKey` + reemplazar `getBusinessAuthContext` stub)
 - [ ] Tabla `webhook_deliveries` + Vercel Cron dispatcher (D-006)
 - [x] API REST pública v1 bajo `/api/v1/...` (parcial: `POST /v1/scan` + error mapper §9.3)
 - [ ] SDK `@scango/sdk` consumiendo API REST

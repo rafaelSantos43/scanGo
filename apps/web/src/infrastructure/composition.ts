@@ -18,9 +18,11 @@ import {
   type RegisterAttendanceInput,
   type RegisterAttendanceResult,
 } from '@/application/use-cases/RegisterAttendance'
+import { SupabaseAuthProvider } from './auth/SupabaseAuthProvider'
 import { SystemClock } from './clock/SystemClock'
 import { UuidGenerator } from './ids/UuidGenerator'
 import { AttendanceRepositoryDrizzle } from './persistence/drizzle/AttendanceRepositoryDrizzle'
+import { BusinessAdminRepositoryDrizzle } from './persistence/drizzle/BusinessAdminRepositoryDrizzle'
 import { BusinessRepositoryDrizzle } from './persistence/drizzle/BusinessRepositoryDrizzle'
 import { CustomerRepositoryDrizzle } from './persistence/drizzle/CustomerRepositoryDrizzle'
 import { PackageRepositoryDrizzle } from './persistence/drizzle/PackageRepositoryDrizzle'
@@ -37,8 +39,36 @@ function getDb(): Database {
   return _db
 }
 
+let _authProvider: SupabaseAuthProvider | null = null
+
+function getAuthProvider(): SupabaseAuthProvider {
+  if (_authProvider) return _authProvider
+  const url = process.env.SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const magicLinkRedirectUrl = process.env.SUPABASE_MAGIC_LINK_REDIRECT_URL
+  if (!url || !serviceRoleKey || !magicLinkRedirectUrl) {
+    throw new Error(
+      'Supabase auth env vars not set (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_MAGIC_LINK_REDIRECT_URL)',
+    )
+  }
+  _authProvider = new SupabaseAuthProvider({
+    url,
+    serviceRoleKey,
+    magicLinkRedirectUrl,
+  })
+  return _authProvider
+}
+
+export function buildAuthProvider(): SupabaseAuthProvider {
+  return getAuthProvider()
+}
+
 export function buildBusinessRepository(): BusinessRepositoryDrizzle {
   return new BusinessRepositoryDrizzle(getDb())
+}
+
+export function buildBusinessAdminRepository(): BusinessAdminRepositoryDrizzle {
+  return new BusinessAdminRepositoryDrizzle(getDb())
 }
 
 export function buildCustomerRepository(): CustomerRepositoryDrizzle {

@@ -3,6 +3,7 @@ import {
   date,
   integer,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -108,4 +109,18 @@ export const attendances = pgTable(
       table.scannedDate,
     ),
   ],
+)
+
+export const businessAdmins = pgTable(
+  'business_admins',
+  {
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id),
+    userId: uuid('user_id').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.businessId, table.userId] })],
 )

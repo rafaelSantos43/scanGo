@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@scango/shared-types": "workspace:*",
+    "@supabase/supabase-js": "^2.105.4",
     "@tanstack/react-query": "^5.100.10",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.16.0",
