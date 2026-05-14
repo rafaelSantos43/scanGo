@@ -1,0 +1,54 @@
+# Checklist global — Scan&Go
+
+Tareas críticas pendientes. Marca con `[x]` al terminar.
+Estado vivo y razonado en [`docs/ENGRAM.md`](./docs/ENGRAM.md).
+
+---
+
+## Fase A — Setup del monorepo
+
+- [x] `git init` en la raíz
+- [x] `.gitattributes` (`* text=auto eol=lf`) y `.editorconfig`
+- [x] `package.json` raíz con workspaces de Bun
+- [x] `tsconfig.base.json` y `bunfig.toml`
+- [x] `apps/web` — Next.js 16 + TS + Tailwind + App Router (commit `dc814dc`)
+- [x] `apps/pwa` — Next.js 16 + TS + Tailwind + App Router (scaffold)
+- [x] Renombrar workspaces a `@scango/web` y `@scango/pwa` + alinear filtros
+- [x] Commit del scaffold de `apps/pwa` + ajustes de nombres (commit `27192e2`)
+- [ ] Stub de `packages/shared-types` (Zod + tipos compartidos API ↔ SDK)
+- [ ] Stub de `packages/sdk` (`@scango/sdk`)
+- [ ] Stub de `packages/react` (`@scango/react`)
+- [ ] Stub de `examples/external-app` (Next.js integrando `@scango/react`)
+- [ ] Drizzle ORM en `apps/web` (`bun add drizzle-orm`, config inicial)
+- [ ] `bunx drizzle-kit` setup (`drizzle.config.ts`, carpeta de migraciones)
+- [ ] Esqueleto de Clean Architecture en `apps/web/src` (carpetas vacías: `domain/`, `application/`, `infrastructure/`, `presentation/`)
+- [ ] `composition.ts` con factories `buildXxx()` vacío (ver D-005)
+
+## Fase M1 — Modelado del dominio
+
+Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) §6.
+
+- [ ] Entidades del dominio (Business, Customer, Package, Attendance, etc.)
+- [ ] Schemas Zod en `packages/shared-types`
+- [ ] Migraciones Drizzle iniciales + políticas RLS (ver D-007)
+- [ ] Repositorios (interfaces en domain, impl en infrastructure)
+- [ ] Use cases v1 (~13, ver D-005)
+- [ ] Tests unitarios con `bun test`
+- [ ] Tests de integración con `@testcontainers/postgresql`
+
+## Cross-cutting (cuando aplique)
+
+- [ ] Auth provider (`SupabaseAuthProvider` — único punto que importa SDK Supabase)
+- [ ] Tabla `webhook_deliveries` + Vercel Cron dispatcher (D-006)
+- [ ] API REST pública v1 bajo `/api/v1/...`
+- [ ] SDK `@scango/sdk` consumiendo API REST
+- [ ] PWA consumiendo `@scango/sdk` (dogfooding)
+- [ ] Dashboard del negocio en `apps/web`
+
+---
+
+## Cómo actualizar este archivo
+
+- Marca `[x]` cuando termines la tarea.
+- Si una tarea se vuelve obsoleta, **no la borres**: márcala con `~~tachado~~` y un comentario `<!-- obsoleta: razón -->`.
+- Nuevas tareas críticas se añaden acá. Decisiones y razonamiento van al ENGRAM, no acá.
