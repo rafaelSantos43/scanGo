@@ -1,0 +1,24 @@
+{
+  "name": "scango",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Scan&Go — Servicio de control de asistencia por QR para cualquier negocio que opere con paquetes de visitas.",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "dev:web": "bun --filter web dev",
+    "dev:pwa": "bun --filter pwa dev",
+    "build": "bun --filter '*' build",
+    "typecheck": "bun --filter '*' typecheck",
+    "lint": "bun --filter '*' lint",
+    "test": "bun test"
+  },
+  "engines": {
+    "bun": ">=1.3.0"
+  },
+  "packageManager": "bun@1.3.12"
+}

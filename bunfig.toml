@@ -1,0 +1,11 @@
+# Bun runtime + package manager config.
+# https://bun.sh/docs/runtime/bunfig
+
+[install]
+# Workspace hoisting estricto: dependencies viven en cada workspace, no en raíz.
+exact = false
+
+[test]
+# Coverage por default activado cuando se corre con --coverage.
+coverage = false
+coverageReporter = ["text", "lcov"]
