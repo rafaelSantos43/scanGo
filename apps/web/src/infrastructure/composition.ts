@@ -18,6 +18,16 @@ import {
   type RegisterAttendanceInput,
   type RegisterAttendanceResult,
 } from '@/application/use-cases/RegisterAttendance'
+import {
+  RequestAdminMagicLinkUseCase,
+  type RequestAdminMagicLinkInput,
+  type RequestAdminMagicLinkResult,
+} from '@/application/use-cases/RequestAdminMagicLink'
+import {
+  VerifyAdminMagicLinkUseCase,
+  type VerifyAdminMagicLinkInput,
+  type VerifyAdminMagicLinkResult,
+} from '@/application/use-cases/VerifyAdminMagicLink'
 import { SupabaseAuthProvider } from './auth/SupabaseAuthProvider'
 import { SystemClock } from './clock/SystemClock'
 import { UuidGenerator } from './ids/UuidGenerator'
@@ -154,4 +164,23 @@ export async function runGenerateQr(
     )
     return useCase.execute(input)
   })
+}
+
+// Use cases de auth: sin transaccion — RequestAdminMagicLink no toca la DB
+// y VerifyAdminMagicLink solo hace lecturas.
+export async function runRequestAdminMagicLink(
+  input: RequestAdminMagicLinkInput,
+): Promise<RequestAdminMagicLinkResult> {
+  const useCase = new RequestAdminMagicLinkUseCase(getAuthProvider())
+  return useCase.execute(input)
+}
+
+export async function runVerifyAdminMagicLink(
+  input: VerifyAdminMagicLinkInput,
+): Promise<VerifyAdminMagicLinkResult> {
+  const useCase = new VerifyAdminMagicLinkUseCase(
+    getAuthProvider(),
+    new BusinessAdminRepositoryDrizzle(getDb()),
+  )
+  return useCase.execute(input)
 }

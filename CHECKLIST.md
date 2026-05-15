@@ -67,7 +67,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 ## Cross-cutting (cuando aplique)
 
 - [x] Auth Phase 1: `AuthProvider` interface en dominio + `SupabaseAuthProvider` (único archivo que importa `@supabase/supabase-js`). Errores tipados: `UnauthenticatedError`, `InvalidCredentialsError`, `EmailAlreadyRegisteredError`, `InvalidMagicLinkError`. Migración `0001_auth_business_admins.sql` con RLS lista para aplicar.
-- [ ] Auth Phase 2: endpoints + UI de login admin (magic link → callback → session cookie) y reemplazar `getAdminAuthContext` stub
+- [x] Auth Phase 2: login admin por magic link. Use cases `RequestAdminMagicLink`/`VerifyAdminMagicLink`, rutas `/api/auth/admin/magic-link`, `/api/auth/callback`, `/api/auth/signout`, cookie de sesión HttpOnly (`sg_admin_session`), UI `/login` + `/dashboard`, `getAdminAuthContext` reescrito (lee cookie + `verifySession`). Migración `0001` aplicada. Pendiente del usuario: config del email template de Supabase + env vars + `db:seed-admin`
 - [ ] Auth Phase 3: customer magic link con `businessId` en el payload (multi-tenant §8.2) + reemplazar `getCustomerAuthContext` stub
 - [ ] Auth Phase 4: API keys (`ApiKey` entity + argon2 + `IssueApiKey`/`RevokeApiKey` + reemplazar `getBusinessAuthContext` stub)
 - [ ] Tabla `webhook_deliveries` + Vercel Cron dispatcher (D-006)

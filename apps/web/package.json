@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "bunx drizzle-kit migrate --config ./drizzle/drizzle.config.ts",
     "db:studio": "bunx drizzle-kit studio --config ./drizzle/drizzle.config.ts",
-    "db:seed": "bun run scripts/seed.ts"
+    "db:seed": "bun run scripts/seed.ts",
+    "db:seed-admin": "bun run scripts/seed-admin.ts"
   },
   "dependencies": {
     "@scango/shared-types": "workspace:*",

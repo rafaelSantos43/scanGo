@@ -9,11 +9,13 @@ import { CustomerEmailAlreadyExistsError } from '@/domain/errors/CustomerEmailAl
 import { CustomerNotFoundError } from '@/domain/errors/CustomerNotFoundError'
 import { InvalidEmailError } from '@/domain/errors/InvalidEmailError'
 import { InvalidIdError } from '@/domain/errors/InvalidIdError'
+import { InvalidMagicLinkError } from '@/domain/errors/InvalidMagicLinkError'
 import { InvalidSlugError } from '@/domain/errors/InvalidSlugError'
 import { InvalidTimezoneError } from '@/domain/errors/InvalidTimezoneError'
 import { InvalidVisitCountError } from '@/domain/errors/InvalidVisitCountError'
 import { LocationNotFoundError } from '@/domain/errors/LocationNotFoundError'
 import { NegativeVisitCountError } from '@/domain/errors/NegativeVisitCountError'
+import { NotABusinessAdminError } from '@/domain/errors/NotABusinessAdminError'
 import { NoActivePackageError } from '@/domain/errors/NoActivePackageError'
 import { PackageDepletedError } from '@/domain/errors/PackageDepletedError'
 import { QrTokenAlreadyUsedError } from '@/domain/errors/QrTokenAlreadyUsedError'
@@ -54,6 +56,10 @@ function mapDomainError(err: DomainError): DomainMapEntry | null {
     return { status: 404, code: 'business_not_found' }
   if (err instanceof LocationNotFoundError)
     return { status: 404, code: 'location_not_found' }
+  if (err instanceof NotABusinessAdminError)
+    return { status: 403, code: 'not_a_business_admin' }
+  if (err instanceof InvalidMagicLinkError)
+    return { status: 400, code: 'invalid_magic_link' }
   if (err instanceof CustomerEmailAlreadyExistsError)
     return { status: 409, code: 'customer_email_already_exists' }
   if (err instanceof CustomerAlreadyHasActivePackageError)

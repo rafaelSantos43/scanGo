@@ -1,10 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { EmailAlreadyRegisteredError } from '@/domain/errors/EmailAlreadyRegisteredError'
 import { InvalidMagicLinkError } from '@/domain/errors/InvalidMagicLinkError'
-import type { AuthProvider } from '@/domain/services/AuthProvider'
-import type { AuthContext } from '@/domain/value-objects/AuthContext'
+import type { AuthProvider, AuthRole } from '@/domain/services/AuthProvider'
 import { Email } from '@/domain/value-objects/Email'
-import { BusinessId, UserId } from '@/domain/value-objects/ids'
+import { UserId } from '@/domain/value-objects/ids'
 
 export interface SupabaseAuthProviderConfig {
   url: string
@@ -22,44 +21,40 @@ export class SupabaseAuthProvider implements AuthProvider {
     })
   }
 
-  async sendMagicLink(email: Email, context: AuthContext): Promise<void> {
-    // El context se serializa en `data` y vuelve por verifyMagicLink.
-    // Supabase lo expone via `user_metadata` o via query params en el redirect.
+  async sendMagicLink(email: Email, role: AuthRole): Promise<void> {
+    // `role` se serializa en `data` (user_metadata) y vuelve por
+    // verifyMagicLink. El businessId NO viaja: para el admin se resuelve
+    // tras verificar via BusinessAdminRepository.
     const { error } = await this.client.auth.signInWithOtp({
       email: email.value,
       options: {
         emailRedirectTo: this.config.magicLinkRedirectUrl,
-        data: {
-          businessId: context.businessId,
-          role: context.role,
-        },
+        data: { role },
       },
     })
     if (error) throw error
   }
 
-  async verifyMagicLink(
-    token: string,
-  ): Promise<{ userId: UserId; context: AuthContext } | null> {
+  async verifyMagicLink(token: string): Promise<{
+    userId: UserId
+    role: AuthRole
+    accessToken: string
+  } | null> {
     // En Supabase los magic links se verifican con verifyOtp tipo 'magiclink'.
     // El token aqui es el `token_hash` que viene en el query string del redirect.
     const { data, error } = await this.client.auth.verifyOtp({
       token_hash: token,
       type: 'magiclink',
     })
-    if (error || !data.user) return null
-    const meta = data.user.user_metadata as
-      | { businessId?: string; role?: 'admin' | 'customer' }
-      | undefined
-    if (!meta?.businessId || !meta.role) {
+    if (error || !data.user || !data.session) return null
+    const meta = data.user.user_metadata as { role?: AuthRole } | undefined
+    if (!meta?.role) {
       throw new InvalidMagicLinkError()
     }
     return {
       userId: UserId(data.user.id),
-      context: {
-        businessId: BusinessId(meta.businessId),
-        role: meta.role,
-      },
+      role: meta.role,
+      accessToken: data.session.access_token,
     }
   }
 

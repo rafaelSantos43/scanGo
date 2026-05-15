@@ -1,11 +1,15 @@
 import {
+  buildAuthProvider,
+  buildBusinessAdminRepository,
+} from '@/infrastructure/composition'
+import {
   BusinessId,
   CustomerId,
-  UserId,
   type BusinessId as TBusinessId,
   type CustomerId as TCustomerId,
   type UserId as TUserId,
 } from '@/domain/value-objects/ids'
+import { readSessionCookie } from './sessionCookie'
 
 export interface CustomerAuthContext {
   customerId: TCustomerId
@@ -50,23 +54,37 @@ export class UnauthenticatedAdminError extends Error {
 }
 
 /**
- * TODO(auth): cuando exista SupabaseAuthProvider, leer la cookie HttpOnly del
- * admin (sesion de Supabase Auth) y resolver userId + businessId desde el JWT
- * validando que el user es admin de ese business via business_admins. Hoy se
- * acepta por headers para desbloquear desarrollo:
- *   X-User-Id: <uuid>
- *   X-Business-Id: <uuid>
+ * Resuelve el admin autenticado desde la cookie de sesion HttpOnly
+ * (`sg_admin_session`, contiene el access_token de Supabase). Valida el
+ * JWT contra Supabase y resuelve el negocio via `business_admins`.
+ * Lanza `UnauthenticatedAdminError` si: no hay cookie, el JWT es
+ * invalido/expirado, o el user dejo de ser admin de algun negocio.
  *
- * Marcado para refactor cuando entre el chunk de auth.
+ * Es async y no recibe `req`: lee la cookie con `cookies()` de
+ * next/headers, asi sirve tanto en Route Handlers como en Server
+ * Components (ej. la pagina `/dashboard`).
  */
-export function getAdminAuthContext(req: Request): AdminAuthContext {
-  const userId = req.headers.get('x-user-id')
-  const businessId = req.headers.get('x-business-id')
-  if (!userId || !businessId) {
+export async function getAdminAuthContext(): Promise<AdminAuthContext> {
+  const token = await readSessionCookie()
+  if (!token) {
     throw new UnauthenticatedAdminError()
   }
+
+  const userId = await buildAuthProvider().verifySession(token)
+  if (!userId) {
+    throw new UnauthenticatedAdminError()
+  }
+
+  const admins = await buildBusinessAdminRepository().findBusinessesByUserId(
+    userId,
+  )
+  if (admins.length === 0) {
+    throw new UnauthenticatedAdminError()
+  }
+
+  // N negocios → el primero (selector multi-negocio fuera de alcance).
   return {
-    userId: UserId(userId),
-    businessId: BusinessId(businessId),
+    userId,
+    businessId: admins[0]!.businessId,
   }
 }

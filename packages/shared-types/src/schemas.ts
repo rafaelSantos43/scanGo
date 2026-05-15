@@ -87,3 +87,23 @@ export const GenerateQrResponseSchema = z.object({
   expiresAt: z.string().datetime(),
 })
 export type GenerateQrResponse = z.infer<typeof GenerateQrResponseSchema>
+
+// POST /auth/admin/magic-link — pide un magic link de login de admin.
+export const RequestAdminMagicLinkRequestSchema = z
+  .object({ email: z.string().email().max(254) })
+  .strict()
+export type RequestAdminMagicLinkRequest = z.infer<
+  typeof RequestAdminMagicLinkRequestSchema
+>
+
+// Respuesta neutral: no revela si el email existe o es admin.
+export const RequestAdminMagicLinkResponseSchema = z.object({
+  sent: z.literal(true),
+})
+export type RequestAdminMagicLinkResponse = z.infer<
+  typeof RequestAdminMagicLinkResponseSchema
+>
+
+// POST /auth/signout
+export const SignoutResponseSchema = z.object({ signedOut: z.literal(true) })
+export type SignoutResponse = z.infer<typeof SignoutResponseSchema>
