@@ -2,7 +2,8 @@
 
 import { useActionState, useEffect, useRef } from 'react'
 import type { CustomerListItem } from '@/domain/repositories/CustomerRepository'
-import { assignPackageAction, initialActionState } from './actions'
+import { initialActionState } from './action-state'
+import { assignPackageAction } from './actions'
 
 const inputClass =
   'h-11 rounded-md border border-border bg-surface px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary'

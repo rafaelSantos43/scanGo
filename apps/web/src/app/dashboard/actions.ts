@@ -12,13 +12,7 @@ import { InvalidEmailError } from '@/domain/errors/InvalidEmailError'
 import { InvalidVisitCountError } from '@/domain/errors/InvalidVisitCountError'
 import { CustomerId } from '@/domain/value-objects/ids'
 import { getAdminAuthContext } from '@/app/api/_lib/authContext'
-
-export type ActionState =
-  | { status: 'idle' }
-  | { status: 'success'; message: string }
-  | { status: 'error'; message: string; fieldErrors?: Record<string, string> }
-
-export const initialActionState: ActionState = { status: 'idle' }
+import type { ActionState } from './action-state'
 
 const SESSION_EXPIRED: ActionState = {
   status: 'error',
