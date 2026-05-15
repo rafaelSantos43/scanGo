@@ -3,13 +3,11 @@ import {
   getAdminAuthContext,
   type AdminAuthContext,
 } from '@/app/api/_lib/authContext'
-import { buildBusinessRepository } from '@/infrastructure/composition'
-import { SignoutButton } from './SignoutButton'
+import { runListTodayAttendances } from '@/infrastructure/composition'
 
 /**
- * Landing autenticado del admin. Resuelve la sesion server-side desde la
- * cookie HttpOnly; sin sesion valida, redirige a /login. Es un placeholder
- * — el dashboard real del negocio queda para un chunk posterior.
+ * Asistencias de hoy del negocio. "Hoy" se calcula en la zona del
+ * negocio dentro del use case. Sin sesión válida, redirige a /login.
  */
 export default async function DashboardPage() {
   let auth: AdminAuthContext
@@ -19,36 +17,47 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const business = await buildBusinessRepository().findById(
-    auth.businessId,
-    auth.businessId,
-  )
+  const { date, timezone, attendances } = await runListTodayAttendances({
+    businessId: auth.businessId,
+  })
+
+  const timeFmt = new Intl.DateTimeFormat('es-CO', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
   return (
-    <main className="flex flex-1 w-full items-center justify-center px-6 py-16 bg-background text-foreground">
-      <div className="flex w-full max-w-md flex-col gap-6">
-        <header className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {business?.name ?? 'Tu negocio'}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Sesión de administrador iniciada.
-          </p>
-        </header>
+    <main className="flex flex-1 flex-col gap-4 px-6 py-8">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Asistencias de hoy
+        </h1>
+        <p className="text-sm text-muted-foreground">{date}</p>
+      </header>
 
-        <dl className="flex flex-col gap-2 rounded-md border border-border bg-surface p-4 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Negocio</dt>
-            <dd className="text-foreground">{auth.businessId}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Usuario</dt>
-            <dd className="text-foreground">{auth.userId}</dd>
-          </div>
-        </dl>
-
-        <SignoutButton />
-      </div>
+      {attendances.length === 0 ? (
+        <p className="text-base text-muted-foreground">
+          Nadie ha marcado asistencia hoy.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {attendances.map((a) => (
+            <li
+              key={a.attendanceId}
+              className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface px-4 py-3"
+            >
+              <span className="font-medium">{a.customerFullName}</span>
+              <span className="text-sm text-muted-foreground">
+                {a.locationName}
+              </span>
+              <span className="text-sm tabular-nums">
+                {timeFmt.format(a.scannedAt)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   )
 }

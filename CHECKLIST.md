@@ -45,7 +45,8 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Use cases CU-02: `CreateCustomer`, `AssignPackage` + endpoints + business auth stub
 - [ ] Use cases CU-01: `RegisterBusiness` (bloqueado hasta auth: requiere `BusinessAdmin` + `ApiKey`)
 - [x] Use case `GenerateQr` + endpoint `POST /v1/qr/generate` (sirve también el caso "rotate": el frontend llama otra vez para obtener un QR nuevo)
-- [ ] Use cases restantes: `UpdateCustomer`, `DisableCustomer`, `ListAttendances`, `IssueApiKey`, `RevokeApiKey`, `CreateWebhookSubscription`, `DeliverWebhook` (cron)
+- [x] Use cases de lectura del dashboard: `ListTodayAttendances`, `ListCustomersWithPackage` (read-models planos vía JOIN)
+- [ ] Use cases restantes: `UpdateCustomer`, `DisableCustomer`, `IssueApiKey`, `RevokeApiKey`, `CreateWebhookSubscription`, `DeliverWebhook` (cron)
 - [x] Tooling listo para aplicar la migración: scripts `db:migrate`, `db:seed`, `db:studio` en `apps/web/package.json`. Seed script idempotente en `apps/web/scripts/seed.ts`. Guía paso a paso en [`docs/DATABASE_SETUP.md`](docs/DATABASE_SETUP.md). El usuario es quien crea la Supabase y corre `db:migrate`.
 - [ ] Tests unitarios con `bun test` (parcial: dominio del flujo de escaneo cubierto)
 - [ ] Tests de integración con `@testcontainers/postgresql`
@@ -62,7 +63,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`. Polling auto removido a pedido del usuario; ahora el QR se genera una vez al cargar y hay un botón manual "Generar nuevo QR". Auto-rotación tras escaneo exitoso queda para cuando entre Realtime.
 - [x] State management: TanStack Query (server) + React Context (session) + Server Components donde se pueda. Convención registrada en [`docs/agents/agent_ui_ux.md`](docs/agents/agent_ui_ux.md) §3.9. Cero `useEffect` para fetching en todo el código de UI.
 - [ ] Manifest PWA + service worker (`next-pwa`) en `apps/pwa`
-- [ ] Dashboard del negocio (lista de asistencias, gestión de clientes, etc.) — fuera de scope hasta auth real
+- [x] Dashboard del negocio "cabina mínima" (D-020): shell + nav, asistencias de hoy, lista de clientes con paquete, formularios de alta de cliente y asignar paquete (Server Components + Server Actions). Falta: QR rotativo + feed en vivo.
 
 ## Cross-cutting (cuando aplique)
 

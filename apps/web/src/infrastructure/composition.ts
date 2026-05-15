@@ -14,6 +14,16 @@ import {
   type GenerateQrResult,
 } from '@/application/use-cases/GenerateQr'
 import {
+  ListCustomersWithPackageUseCase,
+  type ListCustomersWithPackageInput,
+  type ListCustomersWithPackageResult,
+} from '@/application/use-cases/ListCustomersWithPackage'
+import {
+  ListTodayAttendancesUseCase,
+  type ListTodayAttendancesInput,
+  type ListTodayAttendancesResult,
+} from '@/application/use-cases/ListTodayAttendances'
+import {
   RegisterAttendanceUseCase,
   type RegisterAttendanceInput,
   type RegisterAttendanceResult,
@@ -181,6 +191,28 @@ export async function runVerifyAdminMagicLink(
   const useCase = new VerifyAdminMagicLinkUseCase(
     getAuthProvider(),
     new BusinessAdminRepositoryDrizzle(getDb()),
+  )
+  return useCase.execute(input)
+}
+
+// Listados del dashboard: solo lecturas, sin transaccion.
+export async function runListTodayAttendances(
+  input: ListTodayAttendancesInput,
+): Promise<ListTodayAttendancesResult> {
+  const db = getDb()
+  const useCase = new ListTodayAttendancesUseCase(
+    new BusinessRepositoryDrizzle(db),
+    new AttendanceRepositoryDrizzle(db),
+    new SystemClock(),
+  )
+  return useCase.execute(input)
+}
+
+export async function runListCustomersWithPackage(
+  input: ListCustomersWithPackageInput,
+): Promise<ListCustomersWithPackageResult> {
+  const useCase = new ListCustomersWithPackageUseCase(
+    new CustomerRepositoryDrizzle(getDb()),
   )
   return useCase.execute(input)
 }
