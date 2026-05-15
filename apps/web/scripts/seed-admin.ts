@@ -45,13 +45,21 @@ async function main(): Promise<void> {
   const existing = list.users.find((u) => u.email === ADMIN_EMAIL)
   if (existing) {
     userId = existing.id
+    // Asegura el role en la metadata: `signInWithOtp` NO la escribe en
+    // usuarios ya existentes, asi que `verifyMagicLink` no encontraria el
+    // role si no quedo fijado al provisionar la cuenta.
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: { role: 'admin' },
+    })
     console.log(`Usuario admin ya existía en Supabase Auth: ${ADMIN_EMAIL}`)
   } else {
     // Sin password: el login es solo por magic link. email_confirm evita
-    // el paso de confirmación de correo.
+    // el paso de confirmación de correo. El role queda fijo en la metadata
+    // del usuario — es una propiedad de la cuenta, no del link.
     const { data, error } = await supabase.auth.admin.createUser({
       email: ADMIN_EMAIL,
       email_confirm: true,
+      user_metadata: { role: 'admin' },
     })
     if (error || !data.user) {
       console.error('createUser fallo:', error?.message ?? 'sin usuario')
