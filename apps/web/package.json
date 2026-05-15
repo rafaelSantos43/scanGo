@@ -12,7 +12,8 @@
     "db:migrate": "bunx drizzle-kit migrate --config ./drizzle/drizzle.config.ts",
     "db:studio": "bunx drizzle-kit studio --config ./drizzle/drizzle.config.ts",
     "db:seed": "bun run scripts/seed.ts",
-    "db:seed-admin": "bun run scripts/seed-admin.ts"
+    "db:seed-admin": "bun run scripts/seed-admin.ts",
+    "dev:login-link": "bun run scripts/dev-login-link.ts"
   },
   "dependencies": {
     "@scango/shared-types": "workspace:*",
