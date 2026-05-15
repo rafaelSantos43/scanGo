@@ -68,11 +68,28 @@ export const packages = pgTable(
   ],
 )
 
+// Sede física de un negocio. `business` es la empresa (tenant); `location`
+// es la sucursal. Declarada antes de qr_tokens/attendances porque ambas la
+// referencian.
+export const locations = pgTable('locations', {
+  id: uuid('id').primaryKey(),
+  businessId: uuid('business_id')
+    .notNull()
+    .references(() => businesses.id),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+})
+
 export const qrTokens = pgTable('qr_tokens', {
   token: uuid('token').primaryKey(),
   businessId: uuid('business_id')
     .notNull()
     .references(() => businesses.id),
+  locationId: uuid('location_id')
+    .notNull()
+    .references(() => locations.id),
   generatedAt: timestamp('generated_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -93,6 +110,9 @@ export const attendances = pgTable(
     businessId: uuid('business_id')
       .notNull()
       .references(() => businesses.id),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id),
     packageId: uuid('package_id')
       .notNull()
       .references(() => packages.id),

@@ -18,10 +18,12 @@ export async function POST(req: Request): Promise<Response> {
     const dto: ScanResponse = {
       attendanceId: result.attendance.id,
       packageId: result.package.id,
+      locationId: result.attendance.locationId,
       remainingVisits: result.remainingVisits,
       packageStatus: result.package.status,
       scannedAt: result.attendance.scannedAt.toISOString(),
       scannedDate: result.attendance.scannedDate,
+      alreadyRegistered: result.alreadyRegistered,
     }
 
     return Response.json({ data: dto }, { status: 200 })

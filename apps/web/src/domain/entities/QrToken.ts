@@ -3,12 +3,14 @@ import { QrTokenExpiredError } from '../errors/QrTokenExpiredError'
 import type {
   BusinessId,
   CustomerId,
+  LocationId,
   QrTokenValue,
 } from '../value-objects/ids'
 
 export interface QrTokenProps {
   token: QrTokenValue
   businessId: BusinessId
+  locationId: LocationId
   generatedAt: Date
   expiresAt: Date
   usedBy: CustomerId | null
@@ -18,6 +20,7 @@ export interface QrTokenProps {
 export class QrToken {
   readonly token: QrTokenValue
   readonly businessId: BusinessId
+  readonly locationId: LocationId
   readonly generatedAt: Date
   readonly expiresAt: Date
   private _usedBy: CustomerId | null
@@ -26,6 +29,7 @@ export class QrToken {
   constructor(props: QrTokenProps) {
     this.token = props.token
     this.businessId = props.businessId
+    this.locationId = props.locationId
     this.generatedAt = props.generatedAt
     this.expiresAt = props.expiresAt
     this._usedBy = props.usedBy

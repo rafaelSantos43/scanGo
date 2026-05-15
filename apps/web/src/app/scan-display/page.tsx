@@ -13,17 +13,18 @@ export default function ScanDisplayPage() {
   const { session, isHydrated, setSession } = useDashboardSession()
 
   const qr = useQuery({
-    queryKey: ['qr', session?.businessId],
-    queryFn: () => fetchNewQr(session!.businessId),
-    enabled: Boolean(session?.businessId),
+    queryKey: ['qr', session?.businessId, session?.locationId],
+    queryFn: () => fetchNewQr(session!.businessId, session!.locationId),
+    enabled: Boolean(session?.businessId && session?.locationId),
   })
 
   function handleSetupSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
-    const id = String(form.get('businessId') ?? '').trim()
-    if (!UUID_RE.test(id)) return
-    setSession({ businessId: id })
+    const businessId = String(form.get('businessId') ?? '').trim()
+    const locationId = String(form.get('locationId') ?? '').trim()
+    if (!UUID_RE.test(businessId) || !UUID_RE.test(locationId)) return
+    setSession({ businessId, locationId })
   }
 
   if (!isHydrated) {
@@ -46,7 +47,8 @@ export default function ScanDisplayPage() {
         >
           <h1 className="text-2xl font-semibold">Conectar pantalla</h1>
           <p className="text-sm text-muted-foreground">
-            Pega el UUID de tu negocio para que la pantalla muestre tu QR.
+            Pega el UUID de tu negocio y de la sede para que la pantalla
+            muestre el QR de esa sede.
           </p>
           <label htmlFor="businessId" className="text-sm font-medium">
             Business ID
@@ -54,6 +56,18 @@ export default function ScanDisplayPage() {
           <input
             id="businessId"
             name="businessId"
+            type="text"
+            required
+            placeholder="00000000-0000-0000-0000-000000000000"
+            className="h-11 rounded-md border border-border bg-surface px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            autoComplete="off"
+          />
+          <label htmlFor="locationId" className="text-sm font-medium">
+            Location ID (sede)
+          </label>
+          <input
+            id="locationId"
+            name="locationId"
             type="text"
             required
             placeholder="00000000-0000-0000-0000-000000000000"

@@ -33,6 +33,13 @@ export interface RegisterAttendanceResult {
   attendance: Attendance
   package: Package
   remainingVisits: number
+  /**
+   * `true` cuando el cliente ya tenia una asistencia de hoy y esta se
+   * retorna por idempotencia (§9.2) sin consumir una visita nueva.
+   * `false` cuando es un registro fresco. Permite a la UI distinguir
+   * "visita registrada" de "ya registraste tu visita de hoy".
+   */
+  alreadyRegistered: boolean
 }
 
 export class RegisterAttendanceUseCase {
@@ -84,6 +91,7 @@ export class RegisterAttendanceUseCase {
         attendance: existing,
         package: pkg,
         remainingVisits: pkg.remainingVisits.value,
+        alreadyRegistered: true,
       }
     }
 
@@ -129,6 +137,9 @@ export class RegisterAttendanceUseCase {
       id: AttendanceId(this.ids.uuid()),
       customerId: input.customerId,
       businessId: input.businessId,
+      // La sede sale del QR reclamado, no del request: el cliente no
+      // elige donde marca: la pantalla que escaneo determina la sede.
+      locationId: qrToken.locationId,
       packageId: updatedPackage.id,
       qrToken: qrToken.token,
       scannedAt: now,
@@ -145,6 +156,7 @@ export class RegisterAttendanceUseCase {
       attendance,
       package: updatedPackage,
       remainingVisits: updatedPackage.remainingVisits.value,
+      alreadyRegistered: false,
     }
   }
 }

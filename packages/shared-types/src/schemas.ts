@@ -10,10 +10,14 @@ export type ScanRequest = z.infer<typeof ScanRequestSchema>
 export const ScanResponseSchema = z.object({
   attendanceId: uuid,
   packageId: uuid,
+  locationId: uuid,
   remainingVisits: z.number().int().nonnegative(),
   packageStatus: z.enum(["active", "depleted", "expired"]),
   scannedAt: z.string().datetime(),
   scannedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  // true si la visita ya estaba registrada hoy (idempotencia §9.2) y se
+  // devuelve sin consumir otra visita; false si es un registro fresco.
+  alreadyRegistered: z.boolean(),
 })
 export type ScanResponse = z.infer<typeof ScanResponseSchema>
 
@@ -69,14 +73,16 @@ export const AssignPackageResponseSchema = z.object({
 export type AssignPackageResponse = z.infer<typeof AssignPackageResponseSchema>
 
 // POST /v1/qr/generate
-// Sin body — el businessId viene del auth context. .strict() evita que un
-// caller mande campos extra silenciosamente.
-export const GenerateQrRequestSchema = z.object({}).strict()
+// El businessId viene del auth context; locationId va en el body porque una
+// pantalla de QR pertenece a una sede concreta. .strict() evita que un caller
+// mande campos extra silenciosamente.
+export const GenerateQrRequestSchema = z.object({ locationId: uuid }).strict()
 export type GenerateQrRequest = z.infer<typeof GenerateQrRequestSchema>
 
 export const GenerateQrResponseSchema = z.object({
   token: uuid,
   businessId: uuid,
+  locationId: uuid,
   generatedAt: z.string().datetime(),
   expiresAt: z.string().datetime(),
 })

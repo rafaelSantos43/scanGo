@@ -44,3 +44,9 @@ export const QrTokenValue = (raw: string): QrTokenValue => {
   assertUuid('QrTokenValue', raw)
   return raw as QrTokenValue
 }
+
+export type LocationId = string & { readonly __brand: 'LocationId' }
+export const LocationId = (raw: string): LocationId => {
+  assertUuid('LocationId', raw)
+  return raw as LocationId
+}

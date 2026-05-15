@@ -1,7 +1,12 @@
 /**
- * Seed minimo para desarrollo: crea un Business demo con un Customer
- * activo y un Package activo de 30 visitas. Imprime los UUIDs para que
- * puedas pegarlos en los stubs de localStorage de las dos apps.
+ * Seed minimo para desarrollo: crea un Business demo con dos sedes
+ * (Sede Norte y Sede Sur), un Customer activo y un Package activo de
+ * 30 visitas. Imprime los UUIDs para que puedas pegarlos en los stubs
+ * de localStorage de las dos apps.
+ *
+ * Dos sedes a proposito: permite probar la propiedad de seguridad
+ * multi-sede — un QR generado para una sede registra la asistencia en
+ * esa sede, no en la otra.
  *
  * Idempotente: si el business `demo-gym` ya existe, no inserta nada
  * y solo imprime los IDs existentes.
@@ -9,8 +14,8 @@
  * Uso:
  *   cd apps/web && bun run db:seed
  *
- * Requiere DATABASE_URL apuntando a una Postgres con la migracion
- * inicial ya aplicada (bun run db:migrate).
+ * Requiere DATABASE_URL apuntando a una Postgres con las migraciones
+ * ya aplicadas (incluida 0002_locations).
  */
 
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -19,6 +24,7 @@ import postgres from 'postgres'
 import {
   businesses,
   customers,
+  locations,
   packages,
 } from '../src/infrastructure/persistence/drizzle/schema'
 
@@ -32,7 +38,9 @@ async function main(): Promise<void> {
   }
 
   const client = postgres(url, { max: 1, prepare: false })
-  const db = drizzle(client, { schema: { businesses, customers, packages } })
+  const db = drizzle(client, {
+    schema: { businesses, customers, locations, packages },
+  })
 
   try {
     const existing = await db
@@ -43,6 +51,10 @@ async function main(): Promise<void> {
 
     if (existing.length > 0) {
       const biz = existing[0]!
+      const locs = await db
+        .select()
+        .from(locations)
+        .where(eq(locations.businessId, biz.id))
       const cust = await db
         .select()
         .from(customers)
@@ -56,6 +68,9 @@ async function main(): Promise<void> {
 
       console.log('\nEl seed demo ya existia. Estos son los UUIDs:\n')
       console.log(`  Business ID:  ${biz.id}`)
+      for (const loc of locs) {
+        console.log(`  Location ID:  ${loc.id}  (${loc.name})`)
+      }
       if (cust[0]) console.log(`  Customer ID:  ${cust[0].id}`)
       if (pkg[0]) console.log(`  Package ID:   ${pkg[0].id}`)
       console.log('')
@@ -63,6 +78,8 @@ async function main(): Promise<void> {
     }
 
     const businessId = crypto.randomUUID()
+    const locationNorteId = crypto.randomUUID()
+    const locationSurId = crypto.randomUUID()
     const customerId = crypto.randomUUID()
     const packageId = crypto.randomUUID()
     const now = new Date()
@@ -75,6 +92,10 @@ async function main(): Promise<void> {
         type: 'gym',
         timezone: 'America/Bogota',
       })
+      await tx.insert(locations).values([
+        { id: locationNorteId, businessId, name: 'Sede Norte' },
+        { id: locationSurId, businessId, name: 'Sede Sur' },
+      ])
       await tx.insert(customers).values({
         id: customerId,
         businessId,
@@ -97,9 +118,11 @@ async function main(): Promise<void> {
     })
 
     console.log('\nSeed creado correctamente. Usa estos UUIDs en los stubs:\n')
-    console.log(`  Business ID:  ${businessId}`)
-    console.log(`  Customer ID:  ${customerId}`)
-    console.log(`  Package ID:   ${packageId}`)
+    console.log(`  Business ID:        ${businessId}`)
+    console.log(`  Location ID Norte:  ${locationNorteId}`)
+    console.log(`  Location ID Sur:    ${locationSurId}`)
+    console.log(`  Customer ID:        ${customerId}`)
+    console.log(`  Package ID:         ${packageId}`)
     console.log('')
     console.log('En la PWA (http://localhost:3001):')
     console.log(`  Customer ID = ${customerId}`)
@@ -107,6 +130,7 @@ async function main(): Promise<void> {
     console.log('')
     console.log('En el dashboard (http://localhost:3000/scan-display):')
     console.log(`  Business ID = ${businessId}`)
+    console.log(`  Location ID = ${locationNorteId}  (o la Sede Sur)`)
     console.log('')
   } finally {
     await client.end({ timeout: 5 })

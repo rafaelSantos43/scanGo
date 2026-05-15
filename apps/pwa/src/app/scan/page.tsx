@@ -130,7 +130,9 @@ export default function ScanPage() {
               />
             </div>
             <p className="text-base text-muted-foreground">
-              Asistencia registrada.
+              {scan.data.alreadyRegistered
+                ? 'Ya registraste tu visita de hoy.'
+                : 'Asistencia registrada.'}
             </p>
             <div className="flex flex-col items-center gap-1">
               <span className="text-5xl font-bold text-foreground">

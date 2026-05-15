@@ -25,6 +25,7 @@ import { AttendanceRepositoryDrizzle } from './persistence/drizzle/AttendanceRep
 import { BusinessAdminRepositoryDrizzle } from './persistence/drizzle/BusinessAdminRepositoryDrizzle'
 import { BusinessRepositoryDrizzle } from './persistence/drizzle/BusinessRepositoryDrizzle'
 import { CustomerRepositoryDrizzle } from './persistence/drizzle/CustomerRepositoryDrizzle'
+import { LocationRepositoryDrizzle } from './persistence/drizzle/LocationRepositoryDrizzle'
 import { PackageRepositoryDrizzle } from './persistence/drizzle/PackageRepositoryDrizzle'
 import { QrTokenRepositoryDrizzle } from './persistence/drizzle/QrTokenRepositoryDrizzle'
 import { createDb, type Database } from './persistence/drizzle/client'
@@ -87,6 +88,10 @@ export function buildAttendanceRepository(): AttendanceRepositoryDrizzle {
   return new AttendanceRepositoryDrizzle(getDb())
 }
 
+export function buildLocationRepository(): LocationRepositoryDrizzle {
+  return new LocationRepositoryDrizzle(getDb())
+}
+
 export async function runRegisterAttendance(
   input: RegisterAttendanceInput,
 ): Promise<RegisterAttendanceResult> {
@@ -142,6 +147,7 @@ export async function runGenerateQr(
   return db.transaction(async (tx) => {
     const useCase = new GenerateQrUseCase(
       new BusinessRepositoryDrizzle(tx),
+      new LocationRepositoryDrizzle(tx),
       new QrTokenRepositoryDrizzle(tx),
       new SystemClock(),
       new UuidGenerator(),

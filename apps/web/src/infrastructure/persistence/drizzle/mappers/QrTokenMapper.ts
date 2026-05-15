@@ -2,6 +2,7 @@ import { QrToken } from '@/domain/entities/QrToken'
 import {
   BusinessId,
   CustomerId,
+  LocationId,
   QrTokenValue,
 } from '@/domain/value-objects/ids'
 import type { qrTokens } from '../schema'
@@ -14,6 +15,7 @@ export class QrTokenMapper {
     return new QrToken({
       token: QrTokenValue(row.token),
       businessId: BusinessId(row.businessId),
+      locationId: LocationId(row.locationId),
       generatedAt: row.generatedAt,
       expiresAt: row.expiresAt,
       usedBy: row.usedBy ? CustomerId(row.usedBy) : null,
@@ -25,6 +27,7 @@ export class QrTokenMapper {
     return {
       token: entity.token,
       businessId: entity.businessId,
+      locationId: entity.locationId,
       generatedAt: entity.generatedAt,
       expiresAt: entity.expiresAt,
       usedBy: entity.usedBy,

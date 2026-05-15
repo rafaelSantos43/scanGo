@@ -23,6 +23,7 @@ const SCAN_FLOW_TABLES = [
   'qr_tokens',
   'packages',
   'customers',
+  'locations',
   'businesses',
 ]
 

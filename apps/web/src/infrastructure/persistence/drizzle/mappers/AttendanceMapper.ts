@@ -3,6 +3,7 @@ import {
   AttendanceId,
   BusinessId,
   CustomerId,
+  LocationId,
   PackageId,
   QrTokenValue,
 } from '@/domain/value-objects/ids'
@@ -17,6 +18,7 @@ export class AttendanceMapper {
       id: AttendanceId(row.id),
       customerId: CustomerId(row.customerId),
       businessId: BusinessId(row.businessId),
+      locationId: LocationId(row.locationId),
       packageId: PackageId(row.packageId),
       qrToken: QrTokenValue(row.qrToken),
       scannedAt: row.scannedAt,
@@ -29,6 +31,7 @@ export class AttendanceMapper {
       id: entity.id,
       customerId: entity.customerId,
       businessId: entity.businessId,
+      locationId: entity.locationId,
       packageId: entity.packageId,
       qrToken: entity.qrToken,
       scannedAt: entity.scannedAt,

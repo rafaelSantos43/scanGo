@@ -30,6 +30,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 
 - [x] Entidades del dominio del flujo de escaneo (Business, Customer, Package, QrToken, Attendance) — 58 tests verdes
 - [x] `BusinessAdmin` entity + repo + tabla + RLS (Phase 1 auth)
+- [x] Modelo multi-sede (D-018): entidad `Location` + `LocationRepository` + tabla `locations` + RLS + migración `0002_locations.sql` + `locationId` en `Attendance`/`QrToken`; `GenerateQr` recibe y valida la sede. Pendiente del usuario: aplicar `0002_locations` + re-seed
 - [ ] Entidades restantes (ApiKey, WebhookSubscription, WebhookDelivery)
 - [x] Schemas Zod en `packages/shared-types` (parcial: `ScanRequest`/`ScanResponse` + envelopes de éxito/error). Resto a medida que crezcan los endpoints.
 - [x] Migración inicial Drizzle (`0000_init_scan_flow.sql`) + políticas RLS para las 5 tablas del flujo de escaneo (D-007)

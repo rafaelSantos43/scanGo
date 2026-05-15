@@ -5,6 +5,7 @@ import type {
 
 export async function fetchNewQr(
   businessId: string,
+  locationId: string,
 ): Promise<GenerateQrResponse> {
   const res = await fetch('/api/v1/qr/generate', {
     method: 'POST',
@@ -12,7 +13,7 @@ export async function fetchNewQr(
       'content-type': 'application/json',
       'x-business-id': businessId,
     },
-    body: '{}',
+    body: JSON.stringify({ locationId }),
   })
   if (!res.ok) {
     const env = (await res.json()) as ErrorEnvelope
