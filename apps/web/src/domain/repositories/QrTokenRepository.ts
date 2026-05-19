@@ -1,5 +1,10 @@
 import type { QrToken } from '../entities/QrToken'
-import type { BusinessId, CustomerId, QrTokenValue } from '../value-objects/ids'
+import type {
+  BusinessId,
+  CustomerId,
+  LocationId,
+  QrTokenValue,
+} from '../value-objects/ids'
 
 export interface QrTokenRepository {
   findByToken(
@@ -7,6 +12,18 @@ export interface QrTokenRepository {
     businessId: BusinessId,
   ): Promise<QrToken | null>
   save(qrToken: QrToken, businessId: BusinessId): Promise<void>
+
+  /**
+   * Último token de una sede que sigue activo (no usado, no expirado).
+   * Lo usa la pantalla del gym: si hay uno vigente, lo reutiliza; si no,
+   * el caller genera uno nuevo. Implementa RF-17 ("el QR se regenera
+   * tras cada uso exitoso") con polling barato.
+   */
+  findLatestActiveByLocation(
+    businessId: BusinessId,
+    locationId: LocationId,
+    now: Date,
+  ): Promise<QrToken | null>
   // Reclama el token atomicamente. Solo gana si used_by IS NULL y no esta
   // expirado (caso 1 de ARCHITECTURE §9.1). Devuelve null si otro cliente
   // gano la carrera o si esta expirado — el use case interpreta el null

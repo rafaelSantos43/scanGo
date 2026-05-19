@@ -65,7 +65,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Sistema de paleta swappable en ambas apps: tokens `@theme` de Tailwind v4 en `globals.css`. Cero hex/primitivos en componentes. Cambiar `--color-*` actualiza todas las pantallas.
 - [x] `apps/pwa` — pantalla `/scan` con `@yudiel/react-qr-scanner`, mensajes específicos por código de error del backend.
 - [x] `apps/pwa` — landing `/` con mini-form que persiste `customerId` + `businessId` en localStorage (stub hasta auth real).
-- [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`. Polling auto removido a pedido del usuario; ahora el QR se genera una vez al cargar y hay un botón manual "Generar nuevo QR". Auto-rotación tras escaneo exitoso queda para cuando entre Realtime.
+- [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`. RF-17 implementado vía polling barato (D-026): `useQuery` cada 5s al Server Action `getActiveQrAction` → `EnsureLocationQrUseCase` (reusa el último QR activo de la sede, o genera uno nuevo si el anterior fue usado). Pausa automática cuando la pestaña no está visible. Botón manual "Generar nuevo QR" fuerza emisión explícita.
 - [x] State management: TanStack Query (server) + React Context (session) + Server Components donde se pueda. Convención registrada en [`docs/agents/agent_ui_ux.md`](docs/agents/agent_ui_ux.md) §3.9. Cero `useEffect` para fetching en todo el código de UI.
 - [x] `/scan-display` migrada a Server Action `generateQrAction` (D-020): la UI interna ya no consume `/v1`. Eliminado `lib/api/client.ts` (código muerto). Fix de la regresión introducida por Auth Phase 4.
 - [ ] Manifest PWA + service worker (`next-pwa`) en `apps/pwa`

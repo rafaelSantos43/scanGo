@@ -1,7 +1,12 @@
 import type { QrToken } from '@/domain/entities/QrToken'
 import type { QrTokenRepository } from '@/domain/repositories/QrTokenRepository'
-import type { BusinessId, CustomerId, QrTokenValue } from '@/domain/value-objects/ids'
-import { and, eq, gt, isNull } from 'drizzle-orm'
+import type {
+  BusinessId,
+  CustomerId,
+  LocationId,
+  QrTokenValue,
+} from '@/domain/value-objects/ids'
+import { and, desc, eq, gt, isNull } from 'drizzle-orm'
 import type { DbOrTx } from './client'
 import { QrTokenMapper } from './mappers/QrTokenMapper'
 import { qrTokens } from './schema'
@@ -39,6 +44,27 @@ export class QrTokenRepositoryDrizzle implements QrTokenRepository {
           expiresAt: row.expiresAt,
         },
       })
+  }
+
+  async findLatestActiveByLocation(
+    businessId: BusinessId,
+    locationId: LocationId,
+    now: Date,
+  ): Promise<QrToken | null> {
+    const rows = await this.db
+      .select()
+      .from(qrTokens)
+      .where(
+        and(
+          eq(qrTokens.businessId, businessId),
+          eq(qrTokens.locationId, locationId),
+          isNull(qrTokens.usedBy),
+          gt(qrTokens.expiresAt, now),
+        ),
+      )
+      .orderBy(desc(qrTokens.generatedAt))
+      .limit(1)
+    return rows[0] ? QrTokenMapper.toDomain(rows[0]) : null
   }
 
   async claim(

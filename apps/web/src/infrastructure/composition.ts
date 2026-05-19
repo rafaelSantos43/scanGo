@@ -23,6 +23,11 @@ import {
   type EnableCustomerResult,
 } from '@/application/use-cases/EnableCustomer'
 import {
+  EnsureLocationQrUseCase,
+  type EnsureLocationQrInput,
+  type EnsureLocationQrResult,
+} from '@/application/use-cases/EnsureLocationQr'
+import {
   GenerateQrUseCase,
   type GenerateQrInput,
   type GenerateQrResult,
@@ -243,6 +248,22 @@ export async function runGenerateQr(
   const db = getDb()
   return db.transaction(async (tx) => {
     const useCase = new GenerateQrUseCase(
+      new BusinessRepositoryDrizzle(tx),
+      new LocationRepositoryDrizzle(tx),
+      new QrTokenRepositoryDrizzle(tx),
+      new SystemClock(),
+      new UuidGenerator(),
+    )
+    return useCase.execute(input)
+  })
+}
+
+export async function runEnsureLocationQr(
+  input: EnsureLocationQrInput,
+): Promise<EnsureLocationQrResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new EnsureLocationQrUseCase(
       new BusinessRepositoryDrizzle(tx),
       new LocationRepositoryDrizzle(tx),
       new QrTokenRepositoryDrizzle(tx),

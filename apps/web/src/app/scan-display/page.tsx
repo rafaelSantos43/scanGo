@@ -1,25 +1,55 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Loader2, RefreshCw } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useDashboardSession } from '@/lib/dashboard-session-context'
-import { generateQrAction } from './actions'
+import { generateQrAction, getActiveQrAction } from './actions'
+
+// Cada cuánto re-pregunta la pantalla por el QR activo. TanStack Query
+// pausa automáticamente este intervalo cuando la pestaña no está
+// visible (`refetchIntervalInBackground` default false), así que no
+// gasta cuando nadie mira la pantalla.
+const POLL_INTERVAL_MS = 5000
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export default function ScanDisplayPage() {
   const { session, isHydrated, setSession } = useDashboardSession()
+  const queryClient = useQueryClient()
+  const queryKey = ['active-qr', session?.businessId, session?.locationId]
 
+  // RF-17: polling barato del QR activo. Mientras nadie escanee el
+  // server devuelve siempre el mismo token; tras un escaneo el latest
+  // active desaparece y `runEnsureLocationQr` genera uno nuevo, que la
+  // pantalla muestra en el siguiente tick.
   const qr = useQuery({
-    queryKey: ['qr', session?.businessId, session?.locationId],
+    queryKey,
     queryFn: () =>
-      generateQrAction({
+      getActiveQrAction({
         businessId: session!.businessId,
         locationId: session!.locationId,
       }),
     enabled: Boolean(session?.businessId && session?.locationId),
+    refetchInterval: POLL_INTERVAL_MS,
+  })
+
+  // Botón manual: fuerza la emisión de un QR nuevo aunque haya uno
+  // activo vigente (rotación explícita por sospecha de filtración).
+  const forceNew = useMutation({
+    mutationFn: () =>
+      generateQrAction({
+        businessId: session!.businessId,
+        locationId: session!.locationId,
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data)
+    },
   })
 
   function handleSetupSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -137,12 +167,12 @@ export default function ScanDisplayPage() {
 
       <button
         type="button"
-        onClick={() => qr.refetch()}
-        disabled={qr.isFetching}
+        onClick={() => forceNew.mutate()}
+        disabled={forceNew.isPending || qr.isPending}
         className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-base text-foreground hover:bg-muted disabled:opacity-50"
       >
         <RefreshCw
-          className={`h-4 w-4 ${qr.isFetching ? 'animate-spin' : ''}`}
+          className={`h-4 w-4 ${forceNew.isPending ? 'animate-spin' : ''}`}
           aria-hidden="true"
         />
         Generar nuevo QR
