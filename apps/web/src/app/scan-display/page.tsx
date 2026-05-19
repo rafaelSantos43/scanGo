@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, RefreshCw } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import { fetchNewQr } from '@/lib/api/client'
 import { useDashboardSession } from '@/lib/dashboard-session-context'
+import { generateQrAction } from './actions'
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -14,7 +14,11 @@ export default function ScanDisplayPage() {
 
   const qr = useQuery({
     queryKey: ['qr', session?.businessId, session?.locationId],
-    queryFn: () => fetchNewQr(session!.businessId, session!.locationId),
+    queryFn: () =>
+      generateQrAction({
+        businessId: session!.businessId,
+        locationId: session!.locationId,
+      }),
     enabled: Boolean(session?.businessId && session?.locationId),
   })
 

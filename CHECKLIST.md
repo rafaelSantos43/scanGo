@@ -67,7 +67,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] `apps/pwa` — landing `/` con mini-form que persiste `customerId` + `businessId` en localStorage (stub hasta auth real).
 - [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`. Polling auto removido a pedido del usuario; ahora el QR se genera una vez al cargar y hay un botón manual "Generar nuevo QR". Auto-rotación tras escaneo exitoso queda para cuando entre Realtime.
 - [x] State management: TanStack Query (server) + React Context (session) + Server Components donde se pueda. Convención registrada en [`docs/agents/agent_ui_ux.md`](docs/agents/agent_ui_ux.md) §3.9. Cero `useEffect` para fetching en todo el código de UI.
-- [ ] Migrar `/scan-display` a Server Action: hoy llama a `/api/v1/qr/generate` (API pública), que tras Auth Phase 4 exige API key → el botón "Generar QR" da 401. Es UI interna, debe usar Server Action como el dashboard (D-020)
+- [x] `/scan-display` migrada a Server Action `generateQrAction` (D-020): la UI interna ya no consume `/v1`. Eliminado `lib/api/client.ts` (código muerto). Fix de la regresión introducida por Auth Phase 4.
 - [ ] Manifest PWA + service worker (`next-pwa`) en `apps/pwa`
 - [x] Dashboard del negocio "cabina mínima" (D-020): shell + nav, asistencias de hoy, lista de clientes con paquete, formularios de alta de cliente y asignar paquete (Server Components + Server Actions). Falta: QR rotativo + feed en vivo.
 
