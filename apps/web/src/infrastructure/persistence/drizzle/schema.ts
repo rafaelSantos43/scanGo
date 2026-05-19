@@ -147,6 +147,22 @@ export const businessAdmins = pgTable(
   (table) => [primaryKey({ columns: [table.businessId, table.userId] })],
 )
 
+export const apiKeys = pgTable('api_keys', {
+  id: uuid('id').primaryKey(),
+  businessId: uuid('business_id')
+    .notNull()
+    .references(() => businesses.id),
+  hashedKey: text('hashed_key').notNull(),
+  // Prefijo en claro: se muestra en el panel y es el lookup del middleware
+  // de auth (UNIQUE). El valor real de la key no se guarda nunca.
+  prefix: text('prefix').notNull().unique(),
+  scope: text('scope').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+})
+
 export const webhookSubscriptions = pgTable('webhook_subscriptions', {
   id: uuid('id').primaryKey(),
   businessId: uuid('business_id')

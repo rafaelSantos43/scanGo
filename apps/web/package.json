@@ -14,9 +14,11 @@
     "db:seed": "bun run scripts/seed.ts",
     "db:seed-admin": "bun run scripts/seed-admin.ts",
     "db:seed-webhook": "bun run scripts/seed-webhook.ts",
+    "db:seed-api-key": "bun run scripts/seed-api-key.ts",
     "dev:login-link": "bun run scripts/dev-login-link.ts"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
     "@scango/shared-types": "workspace:*",
     "@supabase/supabase-js": "^2.105.4",
     "@tanstack/react-query": "^5.100.10",

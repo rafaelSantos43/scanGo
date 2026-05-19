@@ -16,6 +16,9 @@ function lanOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: lanOrigins(),
+  // Modulo nativo (N-API): que Next lo trate como external y no intente
+  // empaquetar el binario .node en el bundle del servidor.
+  serverExternalPackages: ['@node-rs/argon2'],
 }
 
 export default nextConfig

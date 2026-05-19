@@ -9,7 +9,7 @@ import { mapErrorToHttp } from '../../../_lib/errorMapper'
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const auth = getBusinessAuthContext(req)
+    const auth = await getBusinessAuthContext(req, 'write')
 
     // El body trae locationId (la sede de esta pantalla). Body vacio o
     // no-JSON cae como {} y falla la validacion (.strict() + locationId

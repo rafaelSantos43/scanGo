@@ -28,6 +28,16 @@ import {
   type GenerateQrResult,
 } from '@/application/use-cases/GenerateQr'
 import {
+  IssueApiKeyUseCase,
+  type IssueApiKeyInput,
+  type IssueApiKeyResult,
+} from '@/application/use-cases/IssueApiKey'
+import {
+  RevokeApiKeyUseCase,
+  type RevokeApiKeyInput,
+  type RevokeApiKeyResult,
+} from '@/application/use-cases/RevokeApiKey'
+import {
   UpdateCustomerUseCase,
   type UpdateCustomerInput,
   type UpdateCustomerResult,
@@ -66,10 +76,12 @@ import { BusinessRepositoryDrizzle } from './persistence/drizzle/BusinessReposit
 import { CustomerRepositoryDrizzle } from './persistence/drizzle/CustomerRepositoryDrizzle'
 import { LocationRepositoryDrizzle } from './persistence/drizzle/LocationRepositoryDrizzle'
 import { PackageRepositoryDrizzle } from './persistence/drizzle/PackageRepositoryDrizzle'
+import { ApiKeyRepositoryDrizzle } from './persistence/drizzle/ApiKeyRepositoryDrizzle'
 import { QrTokenRepositoryDrizzle } from './persistence/drizzle/QrTokenRepositoryDrizzle'
 import { WebhookDeliveryRepositoryDrizzle } from './persistence/drizzle/WebhookDeliveryRepositoryDrizzle'
 import { WebhookSubscriptionRepositoryDrizzle } from './persistence/drizzle/WebhookSubscriptionRepositoryDrizzle'
 import { HttpWebhookDispatcher } from './webhooks/HttpWebhookDispatcher'
+import { Argon2ApiKeyHasher } from './auth/Argon2ApiKeyHasher'
 import { createDb, type Database } from './persistence/drizzle/client'
 
 // El cliente de DB se cachea en globalThis, no en una variable de modulo:
@@ -275,6 +287,45 @@ export async function runListCustomersWithPackage(
     new CustomerRepositoryDrizzle(getDb()),
   )
   return useCase.execute(input)
+}
+
+// API keys. buildApiKeyRepository y buildApiKeyHasher los usa el middleware
+// de auth (getBusinessAuthContext) para validar la key en cada request.
+export function buildApiKeyRepository(): ApiKeyRepositoryDrizzle {
+  return new ApiKeyRepositoryDrizzle(getDb())
+}
+
+export function buildApiKeyHasher(): Argon2ApiKeyHasher {
+  return new Argon2ApiKeyHasher()
+}
+
+export async function runIssueApiKey(
+  input: IssueApiKeyInput,
+): Promise<IssueApiKeyResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new IssueApiKeyUseCase(
+      new BusinessRepositoryDrizzle(tx),
+      new ApiKeyRepositoryDrizzle(tx),
+      new Argon2ApiKeyHasher(),
+      new SystemClock(),
+      new UuidGenerator(),
+    )
+    return useCase.execute(input)
+  })
+}
+
+export async function runRevokeApiKey(
+  input: RevokeApiKeyInput,
+): Promise<RevokeApiKeyResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new RevokeApiKeyUseCase(
+      new ApiKeyRepositoryDrizzle(tx),
+      new SystemClock(),
+    )
+    return useCase.execute(input)
+  })
 }
 
 // Cron de entrega de webhooks: SIN transaccion — hace HTTP por cada

@@ -25,7 +25,10 @@ import {
   UnauthenticatedAdminError,
   UnauthenticatedCustomerError,
 } from './authContext'
-import { UnauthenticatedBusinessError } from './businessAuthContext'
+import {
+  ApiKeyInvalidError,
+  ApiKeyScopeError,
+} from './businessAuthContext'
 
 export interface MappedError {
   status: number
@@ -91,8 +94,7 @@ function mapDomainError(err: DomainError): DomainMapEntry | null {
 export function mapErrorToHttp(err: unknown): MappedError {
   if (
     err instanceof UnauthenticatedCustomerError ||
-    err instanceof UnauthenticatedAdminError ||
-    err instanceof UnauthenticatedBusinessError
+    err instanceof UnauthenticatedAdminError
   ) {
     return {
       status: 401,
@@ -100,6 +102,31 @@ export function mapErrorToHttp(err: unknown): MappedError {
         error: {
           code: 'unauthenticated',
           message: 'Missing or invalid credentials',
+        },
+      },
+    }
+  }
+
+  // API key invalida (RF-03, ARCHITECTURE §9.3). Contrato del API publico.
+  if (err instanceof ApiKeyInvalidError) {
+    return {
+      status: 401,
+      body: {
+        error: {
+          code: 'invalid_api_key',
+          message: 'Missing, invalid or revoked API key',
+        },
+      },
+    }
+  }
+
+  if (err instanceof ApiKeyScopeError) {
+    return {
+      status: 403,
+      body: {
+        error: {
+          code: 'insufficient_scope',
+          message: 'The API key does not have the required scope',
         },
       },
     }

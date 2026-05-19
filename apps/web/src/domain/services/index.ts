@@ -5,3 +5,4 @@ export type {
   WebhookDispatcher,
   WebhookDispatchResult,
 } from './WebhookDispatcher'
+export type { ApiKeyHasher } from './ApiKeyHasher'

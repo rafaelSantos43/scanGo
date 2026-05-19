@@ -22,3 +22,5 @@ export type {
   WebhookDeliveryProps,
   WebhookDeliveryStatus,
 } from './WebhookDelivery'
+export { ApiKey } from './ApiKey'
+export type { ApiKeyProps, ApiKeyScope } from './ApiKey'

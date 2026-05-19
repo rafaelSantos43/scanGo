@@ -66,3 +66,9 @@ export const WebhookDeliveryId = (raw: string): WebhookDeliveryId => {
   assertUuid('WebhookDeliveryId', raw)
   return raw as WebhookDeliveryId
 }
+
+export type ApiKeyId = string & { readonly __brand: 'ApiKeyId' }
+export const ApiKeyId = (raw: string): ApiKeyId => {
+  assertUuid('ApiKeyId', raw)
+  return raw as ApiKeyId
+}

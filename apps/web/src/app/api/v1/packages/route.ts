@@ -9,7 +9,7 @@ import { mapErrorToHttp } from '../../_lib/errorMapper'
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const auth = getBusinessAuthContext(req)
+    const auth = await getBusinessAuthContext(req, 'write')
     const body = AssignPackageRequestSchema.parse(await req.json())
 
     const result = await runAssignPackage({
