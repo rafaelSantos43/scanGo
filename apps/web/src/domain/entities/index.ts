@@ -12,3 +12,13 @@ export { BusinessAdmin } from './BusinessAdmin'
 export type { BusinessAdminProps } from './BusinessAdmin'
 export { Location } from './Location'
 export type { LocationProps } from './Location'
+export { WebhookSubscription } from './WebhookSubscription'
+export type {
+  WebhookSubscriptionProps,
+  WebhookSubscriptionStatus,
+} from './WebhookSubscription'
+export { WebhookDelivery } from './WebhookDelivery'
+export type {
+  WebhookDeliveryProps,
+  WebhookDeliveryStatus,
+} from './WebhookDelivery'

@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm'
 import {
   date,
+  index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -143,4 +145,53 @@ export const businessAdmins = pgTable(
       .defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.businessId, table.userId] })],
+)
+
+export const webhookSubscriptions = pgTable('webhook_subscriptions', {
+  id: uuid('id').primaryKey(),
+  businessId: uuid('business_id')
+    .notNull()
+    .references(() => businesses.id),
+  url: text('url').notNull(),
+  signingSecret: text('signing_secret').notNull(),
+  events: text('events').array().notNull(),
+  status: text('status').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+})
+
+// Outbox de entregas de webhook. `business_id` está denormalizado (sale de
+// la suscripción) para RLS uniforme y para la futura vista "entregas
+// fallidas" del panel del negocio. Ver ENGRAM D-022.
+export const webhookDeliveries = pgTable(
+  'webhook_deliveries',
+  {
+    id: uuid('id').primaryKey(),
+    subscriptionId: uuid('subscription_id')
+      .notNull()
+      .references(() => webhookSubscriptions.id),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id),
+    eventType: text('event_type').notNull(),
+    payload: jsonb('payload').notNull(),
+    status: text('status').notNull(),
+    attempt: integer('attempt').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', {
+      withTimezone: true,
+    }).notNull(),
+    deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // El cron escanea por (status, next_attempt_at) en cada tick.
+    index('webhook_deliveries_pending_idx').on(
+      table.status,
+      table.nextAttemptAt,
+    ),
+  ],
 )

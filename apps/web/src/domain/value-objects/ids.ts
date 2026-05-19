@@ -50,3 +50,19 @@ export const LocationId = (raw: string): LocationId => {
   assertUuid('LocationId', raw)
   return raw as LocationId
 }
+
+export type WebhookSubscriptionId = string & {
+  readonly __brand: 'WebhookSubscriptionId'
+}
+export const WebhookSubscriptionId = (raw: string): WebhookSubscriptionId => {
+  assertUuid('WebhookSubscriptionId', raw)
+  return raw as WebhookSubscriptionId
+}
+
+export type WebhookDeliveryId = string & {
+  readonly __brand: 'WebhookDeliveryId'
+}
+export const WebhookDeliveryId = (raw: string): WebhookDeliveryId => {
+  assertUuid('WebhookDeliveryId', raw)
+  return raw as WebhookDeliveryId
+}

@@ -63,6 +63,8 @@ import { CustomerRepositoryDrizzle } from './persistence/drizzle/CustomerReposit
 import { LocationRepositoryDrizzle } from './persistence/drizzle/LocationRepositoryDrizzle'
 import { PackageRepositoryDrizzle } from './persistence/drizzle/PackageRepositoryDrizzle'
 import { QrTokenRepositoryDrizzle } from './persistence/drizzle/QrTokenRepositoryDrizzle'
+import { WebhookDeliveryRepositoryDrizzle } from './persistence/drizzle/WebhookDeliveryRepositoryDrizzle'
+import { WebhookSubscriptionRepositoryDrizzle } from './persistence/drizzle/WebhookSubscriptionRepositoryDrizzle'
 import { createDb, type Database } from './persistence/drizzle/client'
 
 // El cliente de DB se cachea en globalThis, no en una variable de modulo:
@@ -144,6 +146,8 @@ export async function runRegisterAttendance(
       new PackageRepositoryDrizzle(tx),
       new AttendanceRepositoryDrizzle(tx),
       new QrTokenRepositoryDrizzle(tx),
+      new WebhookSubscriptionRepositoryDrizzle(tx),
+      new WebhookDeliveryRepositoryDrizzle(tx),
       new SystemClock(),
       new UuidGenerator(),
     )

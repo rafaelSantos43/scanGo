@@ -1,5 +1,7 @@
 import { Attendance } from '@/domain/entities/Attendance'
 import type { Package } from '@/domain/entities/Package'
+import { WebhookDelivery } from '@/domain/entities/WebhookDelivery'
+import type { WebhookEventType } from '@/domain/events/WebhookEvent'
 import { BusinessNotFoundError } from '@/domain/errors/BusinessNotFoundError'
 import { CustomerDisabledError } from '@/domain/errors/CustomerDisabledError'
 import { CustomerNotFoundError } from '@/domain/errors/CustomerNotFoundError'
@@ -13,10 +15,13 @@ import type { BusinessRepository } from '@/domain/repositories/BusinessRepositor
 import type { CustomerRepository } from '@/domain/repositories/CustomerRepository'
 import type { PackageRepository } from '@/domain/repositories/PackageRepository'
 import type { QrTokenRepository } from '@/domain/repositories/QrTokenRepository'
+import type { WebhookDeliveryRepository } from '@/domain/repositories/WebhookDeliveryRepository'
+import type { WebhookSubscriptionRepository } from '@/domain/repositories/WebhookSubscriptionRepository'
 import type { Clock } from '@/domain/services/Clock'
 import type { IdGenerator } from '@/domain/services/IdGenerator'
 import {
   AttendanceId,
+  WebhookDeliveryId,
   type BusinessId,
   type CustomerId,
   type QrTokenValue,
@@ -49,6 +54,8 @@ export class RegisterAttendanceUseCase {
     private readonly packages: PackageRepository,
     private readonly attendances: AttendanceRepository,
     private readonly qrTokens: QrTokenRepository,
+    private readonly webhookSubscriptions: WebhookSubscriptionRepository,
+    private readonly webhookDeliveries: WebhookDeliveryRepository,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
   ) {}
@@ -147,16 +154,82 @@ export class RegisterAttendanceUseCase {
     })
     await this.attendances.save(attendance, input.businessId)
 
-    // TODO(outbox): cuando WebhookDeliveryRepository exista, insertar fila
-    // pending para 'attendance.created' (y 'package.depleted' si
-    // updatedPackage.status === 'depleted') dentro de esta misma
-    // transaccion. Ver ENGRAM D-006 y ARCHITECTURE §9.1 caso 4.
+    // Outbox (ARCHITECTURE §9.1 caso 4): se encolan las entregas dentro de
+    // la misma transaccion del escaneo. El cron DeliverWebhook las despacha.
+    await this.enqueueWebhooks(attendance, updatedPackage, now)
 
     return {
       attendance,
       package: updatedPackage,
       remainingVisits: updatedPackage.remainingVisits.value,
       alreadyRegistered: false,
+    }
+  }
+
+  /**
+   * Inserta filas `pending` en webhook_deliveries por cada par
+   * (evento, suscripcion suscrita a ese evento). Sin suscripciones
+   * activas no hace nada. La idempotencia (early return de arriba) NO
+   * pasa por aqui: los webhooks se encolan solo en el escaneo fresco.
+   */
+  private async enqueueWebhooks(
+    attendance: Attendance,
+    pkg: Package,
+    now: Date,
+  ): Promise<void> {
+    const subscriptions = await this.webhookSubscriptions.findActiveByBusinessId(
+      attendance.businessId,
+    )
+    if (subscriptions.length === 0) return
+
+    const events: Array<{ type: WebhookEventType; data: Record<string, unknown> }> =
+      [
+        {
+          type: 'attendance.created',
+          data: {
+            attendance_id: attendance.id,
+            customer_id: attendance.customerId,
+            business_id: attendance.businessId,
+            location_id: attendance.locationId,
+            package_id: pkg.id,
+            remaining_visits: pkg.remainingVisits.value,
+            scanned_at: attendance.scannedAt.toISOString(),
+          },
+        },
+      ]
+    if (pkg.status === 'depleted') {
+      events.push({
+        type: 'package.depleted',
+        data: {
+          package_id: pkg.id,
+          customer_id: pkg.customerId,
+          business_id: pkg.businessId,
+          total_visits: pkg.totalVisits.value,
+          remaining_visits: pkg.remainingVisits.value,
+          depleted_at: attendance.scannedAt.toISOString(),
+        },
+      })
+    }
+
+    for (const event of events) {
+      const payload = {
+        id: this.ids.uuid(),
+        type: event.type,
+        created_at: now.toISOString(),
+        data: event.data,
+      }
+      for (const subscription of subscriptions) {
+        if (!subscription.isSubscribedTo(event.type)) continue
+        const delivery = WebhookDelivery.pending({
+          id: WebhookDeliveryId(this.ids.uuid()),
+          subscriptionId: subscription.id,
+          businessId: attendance.businessId,
+          eventType: event.type,
+          payload,
+          now,
+        })
+        await this.webhookDeliveries.save(delivery, attendance.businessId)
+      }
     }
   }
 }

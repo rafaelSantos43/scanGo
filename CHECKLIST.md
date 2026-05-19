@@ -31,17 +31,19 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Entidades del dominio del flujo de escaneo (Business, Customer, Package, QrToken, Attendance) — 58 tests verdes
 - [x] `BusinessAdmin` entity + repo + tabla + RLS (Phase 1 auth)
 - [x] Modelo multi-sede (D-018): entidad `Location` + `LocationRepository` + tabla `locations` + RLS + migración `0002_locations.sql` + `locationId` en `Attendance`/`QrToken`; `GenerateQr` recibe y valida la sede. Pendiente del usuario: aplicar `0002_locations` + re-seed
-- [ ] Entidades restantes (ApiKey, WebhookSubscription, WebhookDelivery)
+- [x] Entidades `WebhookSubscription` + `WebhookDelivery` + tipo `WebhookEventType` (dominio + repos + tablas `0003` + RLS)
+- [ ] Entidad restante: `ApiKey`
 - [x] Schemas Zod en `packages/shared-types` (parcial: `ScanRequest`/`ScanResponse` + envelopes de éxito/error). Resto a medida que crezcan los endpoints.
 - [x] Migración inicial Drizzle (`0000_init_scan_flow.sql`) + políticas RLS para las 5 tablas del flujo de escaneo (D-007)
 - [x] Repositorios Drizzle del flujo de escaneo (5 mappers + 5 repos + composition factories)
-- [ ] Repositorios Drizzle del resto (ApiKey, BusinessAdmin, WebhookSubscription, WebhookDelivery)
+- [x] Repositorios Drizzle de webhooks (`WebhookSubscriptionRepositoryDrizzle`, `WebhookDeliveryRepositoryDrizzle` + 2 mappers)
+- [ ] Repositorios Drizzle del resto (ApiKey)
 - [x] Métodos atómicos: `QrTokenRepository.claim()` y `PackageRepository.decrementVisitAtomic()`
 - [x] Soporte de transacciones en los repos (aceptan `DbOrTx = Database | DrizzleTx`)
 - [x] Use case `RegisterAttendance` (CU-03) + `SystemClock` + `UuidGenerator` + factory `runRegisterAttendance(input)` envolviendo `db.transaction`
 - [x] Idempotencia (§9.2) — chequeo previo en `RegisterAttendance` retorna la asistencia existente. `AttendanceRepository.findByCustomerAndDate` y `PackageRepository.findById` añadidos. Carrera concurrente sigue cayendo en el constraint UNIQUE (no rompe nada).
 - [x] Fix del `isUniqueViolation` para caminar `.cause` de `DrizzleQueryError` (antes el mapeo a `AlreadyScannedTodayError` no se gatillaba)
-- [ ] Outbox en `RegisterAttendance` — insertar filas pending para `attendance.created` (+ `package.depleted` cuando aplique) dentro de la misma transacción. Bloqueado hasta tener `WebhookSubscription` + `WebhookDelivery`
+- [x] Outbox en `RegisterAttendance` — `enqueueWebhooks` inserta filas pending para `attendance.created` (+ `package.depleted` cuando el paquete llega a 0) dentro de la misma transacción del escaneo
 - [x] Use cases CU-02: `CreateCustomer`, `AssignPackage` + endpoints + business auth stub
 - [ ] Use cases CU-01: `RegisterBusiness` (bloqueado hasta auth: requiere `BusinessAdmin` + `ApiKey`)
 - [x] Use case `GenerateQr` + endpoint `POST /v1/qr/generate` (sirve también el caso "rotate": el frontend llama otra vez para obtener un QR nuevo)
