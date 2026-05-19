@@ -48,6 +48,22 @@ export class EnsureLocationQrUseCase {
   async execute(
     input: EnsureLocationQrInput,
   ): Promise<EnsureLocationQrResult> {
+    const now = this.clock.now()
+
+    // Fast path: si ya hay un QR activo de la sede, lo reusamos. No
+    // validamos business/location porque el token solo pudo crearse si
+    // ambos existían entonces (el FK garantiza la consistencia). Esto
+    // recorta el polling estable a una sola query.
+    const existing = await this.qrTokens.findLatestActiveByLocation(
+      input.businessId,
+      input.locationId,
+      now,
+    )
+    if (existing) return { qrToken: existing, generated: false }
+
+    // Slow path (raro: tras un escaneo, o primer arranque): validamos
+    // antes de generar para no insertar un QR contra un business/location
+    // inexistente (los FK lanzarían un 500 menos descriptivo).
     const business = await this.businesses.findById(
       input.businessId,
       input.businessId,
@@ -59,14 +75,6 @@ export class EnsureLocationQrUseCase {
       input.businessId,
     )
     if (!location) throw new LocationNotFoundError(input.locationId)
-
-    const now = this.clock.now()
-    const existing = await this.qrTokens.findLatestActiveByLocation(
-      input.businessId,
-      input.locationId,
-      now,
-    )
-    if (existing) return { qrToken: existing, generated: false }
 
     const qrToken = new QrToken({
       token: QrTokenValue(this.ids.uuid()),

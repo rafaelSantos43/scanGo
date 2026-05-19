@@ -37,6 +37,13 @@ export default function ScanDisplayPage() {
       }),
     enabled: Boolean(session?.businessId && session?.locationId),
     refetchInterval: POLL_INTERVAL_MS,
+    // Los defaults de TanStack Query (focus / reconnect) disparan
+    // refetches extra: solo queremos el intervalo. Sin esto, alternar
+    // entre el navegador y otra ventana hace que parezca que pollea
+    // cada segundo.
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: POLL_INTERVAL_MS,
   })
 
   // Botón manual: fuerza la emisión de un QR nuevo aunque haya uno
