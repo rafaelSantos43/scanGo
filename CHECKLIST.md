@@ -49,7 +49,8 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Use case `GenerateQr` + endpoint `POST /v1/qr/generate` (sirve también el caso "rotate": el frontend llama otra vez para obtener un QR nuevo)
 - [x] Use cases de lectura del dashboard: `ListTodayAttendances`, `ListCustomersWithPackage` (read-models planos vía JOIN)
 - [x] Use cases de edición de cliente (RF-06 completo): `UpdateCustomer`, `DisableCustomer`, `EnableCustomer` + Server Actions + UI `CustomerRow` (fila editable, botón contextual habilitar/deshabilitar) en el dashboard (D-021)
-- [ ] Use cases restantes: `IssueApiKey`, `RevokeApiKey`, `CreateWebhookSubscription`, `DeliverWebhook` (cron)
+- [x] Use case `DeliverWebhook` (cron): `WebhookDispatcher` interface + `HttpWebhookDispatcher` (firma HMAC), transiciones `markDelivered`/`markFailedAttempt` en `WebhookDelivery` (reintentos 1/5/30min, RF-21), repos `listPendingDue`/`update`, cron route `/api/cron/deliver-webhooks` + `vercel.json`. Probado end-to-end. Fixture `db:seed-webhook` (D-023)
+- [ ] Use cases restantes: `IssueApiKey`, `RevokeApiKey`, `CreateWebhookSubscription`
 - [x] Tooling listo para aplicar la migración: scripts `db:migrate`, `db:seed`, `db:studio` en `apps/web/package.json`. Seed script idempotente en `apps/web/scripts/seed.ts`. Guía paso a paso en [`docs/DATABASE_SETUP.md`](docs/DATABASE_SETUP.md). El usuario es quien crea la Supabase y corre `db:migrate`.
 - [ ] Tests unitarios con `bun test` (parcial: dominio del flujo de escaneo cubierto)
 - [ ] Tests de integración con `@testcontainers/postgresql`
@@ -74,7 +75,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] Auth Phase 2: login admin por magic link. Use cases `RequestAdminMagicLink`/`VerifyAdminMagicLink`, rutas `/api/auth/admin/magic-link`, `/api/auth/callback`, `/api/auth/signout`, cookie de sesión HttpOnly (`sg_admin_session`), UI `/login` + `/dashboard`, `getAdminAuthContext` reescrito (lee cookie + `verifySession`). Migración `0001` aplicada. Pendiente del usuario: config del email template de Supabase + env vars + `db:seed-admin`
 - [ ] Auth Phase 3: customer magic link con `businessId` en el payload (multi-tenant §8.2) + reemplazar `getCustomerAuthContext` stub
 - [ ] Auth Phase 4: API keys (`ApiKey` entity + argon2 + `IssueApiKey`/`RevokeApiKey` + reemplazar `getBusinessAuthContext` stub)
-- [ ] Tabla `webhook_deliveries` + Vercel Cron dispatcher (D-006)
+- [x] Tabla `webhook_deliveries` + Vercel Cron dispatcher (D-006): outbox cableado en `RegisterAttendance` + cron `DeliverWebhook` cada minuto. Migración `0003` aplicada
 - [x] API REST pública v1 bajo `/api/v1/...` (parcial: `POST /v1/scan` + error mapper §9.3)
 - [ ] SDK `@scango/sdk` consumiendo API REST
 - [ ] PWA consumiendo `@scango/sdk` (dogfooding)

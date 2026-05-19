@@ -9,6 +9,10 @@ import {
   type CreateCustomerResult,
 } from '@/application/use-cases/CreateCustomer'
 import {
+  DeliverWebhookUseCase,
+  type DeliverWebhookResult,
+} from '@/application/use-cases/DeliverWebhook'
+import {
   DisableCustomerUseCase,
   type DisableCustomerInput,
   type DisableCustomerResult,
@@ -65,6 +69,7 @@ import { PackageRepositoryDrizzle } from './persistence/drizzle/PackageRepositor
 import { QrTokenRepositoryDrizzle } from './persistence/drizzle/QrTokenRepositoryDrizzle'
 import { WebhookDeliveryRepositoryDrizzle } from './persistence/drizzle/WebhookDeliveryRepositoryDrizzle'
 import { WebhookSubscriptionRepositoryDrizzle } from './persistence/drizzle/WebhookSubscriptionRepositoryDrizzle'
+import { HttpWebhookDispatcher } from './webhooks/HttpWebhookDispatcher'
 import { createDb, type Database } from './persistence/drizzle/client'
 
 // El cliente de DB se cachea en globalThis, no en una variable de modulo:
@@ -270,4 +275,18 @@ export async function runListCustomersWithPackage(
     new CustomerRepositoryDrizzle(getDb()),
   )
   return useCase.execute(input)
+}
+
+// Cron de entrega de webhooks: SIN transaccion — hace HTTP por cada
+// delivery y mantener una transaccion abierta durante esos POST seria un
+// anti-patron. Cada update del repo es su propio statement.
+export async function runDeliverWebhook(): Promise<DeliverWebhookResult> {
+  const db = getDb()
+  const useCase = new DeliverWebhookUseCase(
+    new WebhookDeliveryRepositoryDrizzle(db),
+    new WebhookSubscriptionRepositoryDrizzle(db),
+    new HttpWebhookDispatcher(),
+    new SystemClock(),
+  )
+  return useCase.execute()
 }

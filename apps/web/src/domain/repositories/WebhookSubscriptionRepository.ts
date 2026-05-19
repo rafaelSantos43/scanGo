@@ -1,5 +1,8 @@
 import type { WebhookSubscription } from '../entities/WebhookSubscription'
-import type { BusinessId } from '../value-objects/ids'
+import type {
+  BusinessId,
+  WebhookSubscriptionId,
+} from '../value-objects/ids'
 
 export interface WebhookSubscriptionRepository {
   /**
@@ -9,4 +12,13 @@ export interface WebhookSubscriptionRepository {
   findActiveByBusinessId(
     businessId: BusinessId,
   ): Promise<WebhookSubscription[]>
+
+  /**
+   * Busca una suscripción por id. El cron de entrega la usa para resolver
+   * url + signingSecret de cada delivery pendiente.
+   */
+  findById(
+    id: WebhookSubscriptionId,
+    businessId: BusinessId,
+  ): Promise<WebhookSubscription | null>
 }

@@ -44,3 +44,61 @@ describe('WebhookDelivery.pending', () => {
     expect(delivery.payload).toEqual({ type: 'attendance.created' })
   })
 })
+
+function makePending(): WebhookDelivery {
+  return WebhookDelivery.pending({
+    id: DELIVERY_ID,
+    subscriptionId: SUB_ID,
+    businessId: BUSINESS_ID,
+    eventType: 'attendance.created',
+    payload: {},
+    now: new Date('2026-05-19T10:00:00Z'),
+  })
+}
+
+describe('WebhookDelivery.markDelivered', () => {
+  test('pasa a delivered y registra deliveredAt', () => {
+    const d = makePending()
+    const at = new Date('2026-05-19T10:01:00Z')
+    d.markDelivered(at)
+    expect(d.status).toBe('delivered')
+    expect(d.deliveredAt).toBe(at)
+    expect(d.lastError).toBeNull()
+  })
+})
+
+describe('WebhookDelivery.markFailedAttempt', () => {
+  const now = new Date('2026-05-19T12:00:00Z')
+
+  test('1er fallo: reagenda a 1 min y guarda el error', () => {
+    const d = makePending()
+    d.markFailedAttempt(now, 'HTTP 500')
+    expect(d.status).toBe('pending')
+    expect(d.attempt).toBe(1)
+    expect(d.lastError).toBe('HTTP 500')
+    expect(d.nextAttemptAt.getTime()).toBe(now.getTime() + 60_000)
+  })
+
+  test('2o fallo reagenda a 5 min, 3er fallo a 30 min', () => {
+    const d = makePending()
+    d.markFailedAttempt(now, 'e')
+    d.markFailedAttempt(now, 'e')
+    expect(d.attempt).toBe(2)
+    expect(d.nextAttemptAt.getTime()).toBe(now.getTime() + 5 * 60_000)
+    d.markFailedAttempt(now, 'e')
+    expect(d.attempt).toBe(3)
+    expect(d.nextAttemptAt.getTime()).toBe(now.getTime() + 30 * 60_000)
+    expect(d.status).toBe('pending')
+  })
+
+  test('4o fallo (3er reintento) deja la entrega en failed', () => {
+    const d = makePending()
+    d.markFailedAttempt(now, 'e')
+    d.markFailedAttempt(now, 'e')
+    d.markFailedAttempt(now, 'e')
+    d.markFailedAttempt(now, 'timeout')
+    expect(d.status).toBe('failed')
+    expect(d.attempt).toBe(4)
+    expect(d.lastError).toBe('timeout')
+  })
+})
