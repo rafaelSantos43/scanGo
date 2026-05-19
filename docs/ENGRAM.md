@@ -236,14 +236,15 @@ Cada entrada sigue el formato de §2.8 de RULES global: decisión + alternativas
 - **Trigger para revisar:** si una sola pantalla supera ~20K polls/día (gym muy activo), o si entra el chunk de custom JWT claims para otro motivo y Realtime queda barato.
 - **Donde queda:** `application/use-cases/EnsureLocationQr.ts`, `infrastructure/persistence/drizzle/QrTokenRepositoryDrizzle.ts` (`findLatestActiveByLocation`), `app/scan-display/{actions.ts,page.tsx}`.
 
-### D-025 — Refresh token de la sesión del admin se ejecuta en middleware
+### D-025 — Refresh token de la sesión del admin se ejecuta en el proxy
 - **Fecha:** 2026-05-19
-- **Decisión:** El canje del `refresh_token` por un par nuevo (cierra D-019 trigger "si 1h molesta") se hace en un Next.js middleware (`src/middleware.ts`) que matchea `/dashboard/:path*`. El middleware decodifica el `exp` del JWT localmente (sin verificar firma) y, si está por vencer, llama a Supabase `POST /auth/v1/token?grant_type=refresh_token` y reescribe las cookies.
-- **Alternativas:** (A) bump del JWT expiry a 24h sin refresh — menos código, pero ventana de daño en caso de robo de cookie es 24× mayor; (B) refresh dentro de `getAdminAuthContext` — funciona en Server Actions / Route Handlers, pero los Server Components no pueden escribir cookies, así que el cookie nuevo no persistiría tras una page load; (C) middleware — la elegida.
-- **Por qué:** middleware es el único punto donde se puede escribir cookies *antes* de que la page se renderice. Decodificar el JWT localmente para decidir si refrescar evita un round-trip extra a Supabase cuando el access sigue vigente. El middleware usa fetch directo (no `@supabase/supabase-js`) para no arrastrar el SDK al runtime del middleware y respetar la regla "solo `SupabaseAuthProvider` importa el SDK".
-- **Qué se pierde:** el middleware corre en cada request a `/dashboard/*` (chequeo de exp + posible refresh). Costo bajo, pero existe.
+- **Decisión:** El canje del `refresh_token` por un par nuevo (cierra D-019 trigger "si 1h molesta") se hace en el proxy de Next.js (`src/proxy.ts`, lo que Next 14 llamaba `middleware`) que matchea `/dashboard/:path*`. El proxy decodifica el `exp` del JWT localmente (sin verificar firma) y, si está por vencer, llama a Supabase `POST /auth/v1/token?grant_type=refresh_token` y reescribe las cookies.
+- **Alternativas:** (A) bump del JWT expiry a 24h sin refresh — menos código, pero ventana de daño en caso de robo de cookie es 24× mayor; (B) refresh dentro de `getAdminAuthContext` — funciona en Server Actions / Route Handlers, pero los Server Components no pueden escribir cookies, así que el cookie nuevo no persistiría tras una page load; (C) proxy/middleware — la elegida.
+- **Por qué:** el proxy es el único punto donde se puede escribir cookies *antes* de que la page se renderice. Decodificar el JWT localmente para decidir si refrescar evita un round-trip extra a Supabase cuando el access sigue vigente. El proxy usa fetch directo (no `@supabase/supabase-js`) para no arrastrar el SDK al runtime del proxy y respetar la regla "solo `SupabaseAuthProvider` importa el SDK".
+- **Qué se pierde:** el proxy corre en cada request a `/dashboard/*` (chequeo de exp + posible refresh). Costo bajo, pero existe.
+- **Nota:** la lógica vive integrada en `src/proxy.ts` junto a la de CORS para `/api/*` (un mismo archivo, dispatcher por path). Originalmente se metió como `src/middleware.ts`; al detectarse el warning de Next 16 ("middleware deprecated, use proxy"), se renombró y fusionó.
 - **Trigger para revisar:** si Phase 3 (customer magic link) entra y queremos unificar; o si Supabase cambia su REST de refresh.
-- **Donde queda:** `src/middleware.ts`, `app/api/_lib/sessionCookie.ts` (`applySessionCookies`/`clearSessionCookies`), `domain/services/AuthProvider.ts`, `infrastructure/auth/SupabaseAuthProvider.ts`, `application/use-cases/VerifyAdminMagicLink.ts`.
+- **Donde queda:** `src/proxy.ts`, `app/api/_lib/sessionCookie.ts` (`applySessionCookies`/`clearSessionCookies`), `domain/services/AuthProvider.ts`, `infrastructure/auth/SupabaseAuthProvider.ts`, `application/use-cases/VerifyAdminMagicLink.ts`.
 
 ### D-022 — `webhook_deliveries` lleva `business_id` denormalizado
 - **Fecha:** 2026-05-19
