@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { InvalidMagicLinkError } from '@/domain/errors/InvalidMagicLinkError'
 import { NotABusinessAdminError } from '@/domain/errors/NotABusinessAdminError'
 import { runVerifyAdminMagicLink } from '@/infrastructure/composition'
-import { applySessionCookie } from '../../_lib/sessionCookie'
+import { applySessionCookies } from '../../_lib/sessionCookie'
 
 /**
  * Callback del magic link. Es una navegacion del browser (GET), no una
@@ -25,7 +25,10 @@ export async function GET(req: Request): Promise<Response> {
   try {
     const result = await runVerifyAdminMagicLink({ token: tokenHash })
     const res = redirectTo('/dashboard')
-    applySessionCookie(res, result.accessToken)
+    applySessionCookies(res, {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    })
     return res
   } catch (err) {
     if (err instanceof InvalidMagicLinkError) {

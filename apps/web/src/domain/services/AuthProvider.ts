@@ -26,14 +26,16 @@ export interface AuthProvider {
 
   /**
    * Verifica un magic link recibido. Devuelve el user resuelto, el
-   * `role` que viajo en el link y el `accessToken` (JWT de Supabase)
-   * de la sesion recien creada — el caller lo guarda en la cookie
-   * HttpOnly. Devuelve null si el token es invalido o expiro.
+   * `role` que viajo en el link, el `accessToken` (JWT corto) y el
+   * `refreshToken` (largo, rotativo) de la sesion recien creada — el
+   * caller los guarda en cookies HttpOnly. Devuelve null si el token es
+   * invalido o expiro.
    */
   verifyMagicLink(token: string): Promise<{
     userId: UserId
     role: AuthRole
     accessToken: string
+    refreshToken: string
   } | null>
 
   /**

@@ -39,6 +39,7 @@ export class SupabaseAuthProvider implements AuthProvider {
     userId: UserId
     role: AuthRole
     accessToken: string
+    refreshToken: string
   } | null> {
     // En Supabase los magic links se verifican con verifyOtp tipo 'magiclink'.
     // El token aqui es el `token_hash` que viene en el query string del redirect.
@@ -55,6 +56,7 @@ export class SupabaseAuthProvider implements AuthProvider {
       userId: UserId(data.user.id),
       role: meta.role,
       accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
     }
   }
 

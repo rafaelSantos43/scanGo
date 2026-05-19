@@ -12,6 +12,7 @@ export interface VerifyAdminMagicLinkResult {
   userId: UserId
   businessId: BusinessId
   accessToken: string
+  refreshToken: string
 }
 
 /**
@@ -50,6 +51,7 @@ export class VerifyAdminMagicLinkUseCase {
       userId: verified.userId,
       businessId: admins[0]!.businessId,
       accessToken: verified.accessToken,
+      refreshToken: verified.refreshToken,
     }
   }
 }
