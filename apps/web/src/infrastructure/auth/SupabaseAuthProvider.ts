@@ -1,5 +1,4 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { EmailAlreadyRegisteredError } from '@/domain/errors/EmailAlreadyRegisteredError'
 import { InvalidMagicLinkError } from '@/domain/errors/InvalidMagicLinkError'
 import type { AuthProvider, AuthRole } from '@/domain/services/AuthProvider'
 import { Email } from '@/domain/value-objects/Email'
@@ -58,46 +57,6 @@ export class SupabaseAuthProvider implements AuthProvider {
       accessToken: data.session.access_token,
       refreshToken: data.session.refresh_token,
     }
-  }
-
-  async createUserWithPassword(
-    email: Email,
-    password: string,
-  ): Promise<UserId> {
-    const { data, error } = await this.client.auth.admin.createUser({
-      email: email.value,
-      password,
-      email_confirm: true,
-    })
-    if (error) {
-      // Supabase devuelve un error con `status: 422` y un mensaje sobre
-      // duplicate cuando el email ya esta tomado.
-      if (
-        typeof (error as { message?: unknown }).message === 'string' &&
-        ((error as { message: string }).message
-          .toLowerCase()
-          .includes('already') ||
-          (error as { message: string }).message
-            .toLowerCase()
-            .includes('exists'))
-      ) {
-        throw new EmailAlreadyRegisteredError(email.value)
-      }
-      throw error
-    }
-    return UserId(data.user.id)
-  }
-
-  async signInWithPassword(
-    email: Email,
-    password: string,
-  ): Promise<UserId | null> {
-    const { data, error } = await this.client.auth.signInWithPassword({
-      email: email.value,
-      password,
-    })
-    if (error || !data.user) return null
-    return UserId(data.user.id)
   }
 
   async verifySession(sessionToken: string): Promise<UserId | null> {

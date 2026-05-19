@@ -8,11 +8,15 @@ export type AuthRole = 'admin' | 'customer'
  * a Supabase ni a ningun otro provider (ARCHITECTURE §8.4). El
  * SupabaseAuthProvider concreto vive en infrastructure/auth/.
  *
- * Para v1 cubre los flujos del PRD:
- * - Admin del negocio: email+password o magic link (§8.1, RF-01).
- * - Cliente final: magic link only (§8.2, RF-02).
+ * Para v1 cubre los flujos del PRD vía magic link:
+ * - Admin del negocio (§8.1, RF-01).
+ * - Cliente final (§8.2, RF-02).
  * - Sesion via cookie HttpOnly con el JWT de Supabase, validada
  *   server-side con `verifySession`.
+ *
+ * PRD RF-01 también permite password — no está cableado. Si se cablea,
+ * `createUserWithPassword` y `signInWithPassword` se añaden aquí con un
+ * consumidor real (use case + UI) en el mismo chunk.
  */
 export interface AuthProvider {
   /**
@@ -37,19 +41,6 @@ export interface AuthProvider {
     accessToken: string
     refreshToken: string
   } | null>
-
-  /**
-   * Crea un usuario nuevo con password (admin signup). Devuelve su UserId.
-   * Si el email ya esta registrado, lanza el error correspondiente del
-   * provider (el caller debera mapearlo a un domain error).
-   */
-  createUserWithPassword(email: Email, password: string): Promise<UserId>
-
-  /**
-   * Verifica email+password (admin login). Devuelve el UserId si las
-   * credenciales son validas, o null si no.
-   */
-  signInWithPassword(email: Email, password: string): Promise<UserId | null>
 
   /**
    * Valida un access token (JWT) de sesion y devuelve el UserId

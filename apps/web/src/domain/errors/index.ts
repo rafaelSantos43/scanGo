@@ -18,8 +18,6 @@ export { CustomerEmailAlreadyExistsError } from './CustomerEmailAlreadyExistsErr
 export { CustomerAlreadyHasActivePackageError } from './CustomerAlreadyHasActivePackageError'
 export { InvalidVisitCountError } from './InvalidVisitCountError'
 export { UnauthenticatedError } from './UnauthenticatedError'
-export { InvalidCredentialsError } from './InvalidCredentialsError'
-export { EmailAlreadyRegisteredError } from './EmailAlreadyRegisteredError'
 export { InvalidMagicLinkError } from './InvalidMagicLinkError'
 export { LocationNotFoundError } from './LocationNotFoundError'
 export { NotABusinessAdminError } from './NotABusinessAdminError'
