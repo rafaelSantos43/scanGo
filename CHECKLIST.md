@@ -46,7 +46,8 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [ ] Use cases CU-01: `RegisterBusiness` (bloqueado hasta auth: requiere `BusinessAdmin` + `ApiKey`)
 - [x] Use case `GenerateQr` + endpoint `POST /v1/qr/generate` (sirve también el caso "rotate": el frontend llama otra vez para obtener un QR nuevo)
 - [x] Use cases de lectura del dashboard: `ListTodayAttendances`, `ListCustomersWithPackage` (read-models planos vía JOIN)
-- [ ] Use cases restantes: `UpdateCustomer`, `DisableCustomer`, `IssueApiKey`, `RevokeApiKey`, `CreateWebhookSubscription`, `DeliverWebhook` (cron)
+- [x] Use cases de edición de cliente (RF-06 completo): `UpdateCustomer`, `DisableCustomer`, `EnableCustomer` + Server Actions + UI `CustomerRow` (fila editable, botón contextual habilitar/deshabilitar) en el dashboard (D-021)
+- [ ] Use cases restantes: `IssueApiKey`, `RevokeApiKey`, `CreateWebhookSubscription`, `DeliverWebhook` (cron)
 - [x] Tooling listo para aplicar la migración: scripts `db:migrate`, `db:seed`, `db:studio` en `apps/web/package.json`. Seed script idempotente en `apps/web/scripts/seed.ts`. Guía paso a paso en [`docs/DATABASE_SETUP.md`](docs/DATABASE_SETUP.md). El usuario es quien crea la Supabase y corre `db:migrate`.
 - [ ] Tests unitarios con `bun test` (parcial: dominio del flujo de escaneo cubierto)
 - [ ] Tests de integración con `@testcontainers/postgresql`

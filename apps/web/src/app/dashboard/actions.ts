@@ -2,7 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { runAssignPackage, runCreateCustomer } from '@/infrastructure/composition'
+import {
+  runAssignPackage,
+  runCreateCustomer,
+  runDisableCustomer,
+  runEnableCustomer,
+  runUpdateCustomer,
+} from '@/infrastructure/composition'
 import { BusinessNotFoundError } from '@/domain/errors/BusinessNotFoundError'
 import { CustomerAlreadyHasActivePackageError } from '@/domain/errors/CustomerAlreadyHasActivePackageError'
 import { CustomerDisabledError } from '@/domain/errors/CustomerDisabledError'
@@ -114,6 +120,120 @@ export async function createCustomerAction(
 
   revalidatePath('/dashboard/clientes')
   return { status: 'success', message: 'Cliente creado.' }
+}
+
+const updateCustomerSchema = z.object({
+  customerId: z.string().uuid('Cliente inválido'),
+  fullName: z.string().trim().min(1, 'El nombre es obligatorio').max(120),
+  email: z.string().trim().email('Email inválido').max(254),
+  phone: z.string().trim().max(40).optional(),
+})
+
+export async function updateCustomerAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  let businessId
+  try {
+    businessId = (await getAdminAuthContext()).businessId
+  } catch {
+    return SESSION_EXPIRED
+  }
+
+  const parsed = updateCustomerSchema.safeParse({
+    customerId: formData.get('customerId'),
+    fullName: formData.get('fullName'),
+    email: formData.get('email'),
+    phone: formData.get('phone') || undefined,
+  })
+  if (!parsed.success) {
+    return {
+      status: 'error',
+      message: 'Revisa los campos.',
+      fieldErrors: fieldErrors(parsed.error),
+    }
+  }
+
+  try {
+    await runUpdateCustomer({
+      businessId,
+      customerId: CustomerId(parsed.data.customerId),
+      fullName: parsed.data.fullName,
+      email: parsed.data.email,
+      phone: parsed.data.phone ?? null,
+    })
+  } catch (err) {
+    return mapDomainError(err)
+  }
+
+  revalidatePath('/dashboard/clientes')
+  return { status: 'success', message: 'Cliente actualizado.' }
+}
+
+const customerIdSchema = z.object({
+  customerId: z.string().uuid('Cliente inválido'),
+})
+
+export async function disableCustomerAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  let businessId
+  try {
+    businessId = (await getAdminAuthContext()).businessId
+  } catch {
+    return SESSION_EXPIRED
+  }
+
+  const parsed = customerIdSchema.safeParse({
+    customerId: formData.get('customerId'),
+  })
+  if (!parsed.success) {
+    return { status: 'error', message: 'Cliente inválido.' }
+  }
+
+  try {
+    await runDisableCustomer({
+      businessId,
+      customerId: CustomerId(parsed.data.customerId),
+    })
+  } catch (err) {
+    return mapDomainError(err)
+  }
+
+  revalidatePath('/dashboard/clientes')
+  return { status: 'success', message: 'Cliente deshabilitado.' }
+}
+
+export async function enableCustomerAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  let businessId
+  try {
+    businessId = (await getAdminAuthContext()).businessId
+  } catch {
+    return SESSION_EXPIRED
+  }
+
+  const parsed = customerIdSchema.safeParse({
+    customerId: formData.get('customerId'),
+  })
+  if (!parsed.success) {
+    return { status: 'error', message: 'Cliente inválido.' }
+  }
+
+  try {
+    await runEnableCustomer({
+      businessId,
+      customerId: CustomerId(parsed.data.customerId),
+    })
+  } catch (err) {
+    return mapDomainError(err)
+  }
+
+  revalidatePath('/dashboard/clientes')
+  return { status: 'success', message: 'Cliente habilitado.' }
 }
 
 const assignPackageSchema = z.object({

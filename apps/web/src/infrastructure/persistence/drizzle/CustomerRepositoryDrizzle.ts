@@ -61,6 +61,33 @@ export class CustomerRepositoryDrizzle implements CustomerRepository {
     }
   }
 
+  async update(customer: Customer, businessId: BusinessId): Promise<void> {
+    if (customer.businessId !== businessId) {
+      throw new Error('Customer businessId does not match expected businessId')
+    }
+    try {
+      await this.db
+        .update(customers)
+        .set({
+          fullName: customer.fullName,
+          email: customer.email.value,
+          phone: customer.phone,
+          status: customer.status,
+        })
+        .where(
+          and(
+            eq(customers.id, customer.id),
+            eq(customers.businessId, businessId),
+          ),
+        )
+    } catch (err) {
+      if (isUniqueViolation(err, EMAIL_UNIQUE_CONSTRAINT)) {
+        throw new CustomerEmailAlreadyExistsError(customer.email.value)
+      }
+      throw err
+    }
+  }
+
   async listByBusinessWithActivePackage(
     businessId: BusinessId,
   ): Promise<CustomerListItem[]> {

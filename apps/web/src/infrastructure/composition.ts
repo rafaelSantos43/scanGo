@@ -9,10 +9,25 @@ import {
   type CreateCustomerResult,
 } from '@/application/use-cases/CreateCustomer'
 import {
+  DisableCustomerUseCase,
+  type DisableCustomerInput,
+  type DisableCustomerResult,
+} from '@/application/use-cases/DisableCustomer'
+import {
+  EnableCustomerUseCase,
+  type EnableCustomerInput,
+  type EnableCustomerResult,
+} from '@/application/use-cases/EnableCustomer'
+import {
   GenerateQrUseCase,
   type GenerateQrInput,
   type GenerateQrResult,
 } from '@/application/use-cases/GenerateQr'
+import {
+  UpdateCustomerUseCase,
+  type UpdateCustomerInput,
+  type UpdateCustomerResult,
+} from '@/application/use-cases/UpdateCustomer'
 import {
   ListCustomersWithPackageUseCase,
   type ListCustomersWithPackageInput,
@@ -50,14 +65,20 @@ import { PackageRepositoryDrizzle } from './persistence/drizzle/PackageRepositor
 import { QrTokenRepositoryDrizzle } from './persistence/drizzle/QrTokenRepositoryDrizzle'
 import { createDb, type Database } from './persistence/drizzle/client'
 
-let _db: Database | null = null
+// El cliente de DB se cachea en globalThis, no en una variable de modulo:
+// en dev el HMR de Next re-evalua este modulo en cada recarga y un
+// singleton de modulo se perderia, filtrando un pool de postgres-js nuevo
+// por recarga hasta agotar el pooler de Supabase.
+const globalForDb = globalThis as typeof globalThis & {
+  __scangoDb?: Database
+}
 
 function getDb(): Database {
-  if (_db) return _db
+  if (globalForDb.__scangoDb) return globalForDb.__scangoDb
   const url = process.env.DATABASE_URL
   if (!url) throw new Error('DATABASE_URL is not set')
-  _db = createDb(url)
-  return _db
+  globalForDb.__scangoDb = createDb(url)
+  return globalForDb.__scangoDb
 }
 
 let _authProvider: SupabaseAuthProvider | null = null
@@ -141,6 +162,36 @@ export async function runCreateCustomer(
       new SystemClock(),
       new UuidGenerator(),
     )
+    return useCase.execute(input)
+  })
+}
+
+export async function runUpdateCustomer(
+  input: UpdateCustomerInput,
+): Promise<UpdateCustomerResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new UpdateCustomerUseCase(new CustomerRepositoryDrizzle(tx))
+    return useCase.execute(input)
+  })
+}
+
+export async function runDisableCustomer(
+  input: DisableCustomerInput,
+): Promise<DisableCustomerResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new DisableCustomerUseCase(new CustomerRepositoryDrizzle(tx))
+    return useCase.execute(input)
+  })
+}
+
+export async function runEnableCustomer(
+  input: EnableCustomerInput,
+): Promise<EnableCustomerResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new EnableCustomerUseCase(new CustomerRepositoryDrizzle(tx))
     return useCase.execute(input)
   })
 }

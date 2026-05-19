@@ -34,11 +34,14 @@ export interface CustomerRepository {
   /**
    * Persiste un cliente nuevo. Lanza CustomerEmailAlreadyExistsError si
    * el email ya existe para ese business_id (constraint UNIQUE
-   * customers_business_email_unique).
-   *
-   * Es save, no upsert: no actualiza filas existentes. Edicion de
-   * cliente vendra como un metodo separado (update) cuando se implemente
-   * RF-06 completo.
+   * customers_business_email_unique). Es insert, no upsert.
    */
   save(customer: Customer, businessId: BusinessId): Promise<void>
+
+  /**
+   * Actualiza full_name, email, phone y status de un cliente existente.
+   * No toca user_id ni created_at. Lanza CustomerEmailAlreadyExistsError
+   * si el nuevo email colisiona con otro cliente del mismo negocio.
+   */
+  update(customer: Customer, businessId: BusinessId): Promise<void>
 }

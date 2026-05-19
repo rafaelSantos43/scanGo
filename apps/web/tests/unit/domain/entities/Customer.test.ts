@@ -51,4 +51,17 @@ describe('Customer', () => {
     c.disable()
     expect(c.status).toBe('disabled')
   })
+
+  test('enable() flips status to active', () => {
+    const c = makeCustomer('disabled')
+    c.enable()
+    expect(c.status).toBe('active')
+    expect(c.isActive()).toBe(true)
+  })
+
+  test('enable() is idempotent', () => {
+    const c = makeCustomer('active')
+    c.enable()
+    expect(c.status).toBe('active')
+  })
 })

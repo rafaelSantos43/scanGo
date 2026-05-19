@@ -6,6 +6,7 @@ import {
 import { runListCustomersWithPackage } from '@/infrastructure/composition'
 import { AssignPackageForm } from '../AssignPackageForm'
 import { CreateCustomerForm } from '../CreateCustomerForm'
+import { CustomerRow } from '../CustomerRow'
 
 /**
  * Clientes del negocio: lista con el paquete activo de cada uno, más los
@@ -43,23 +44,7 @@ export default async function ClientesPage() {
         ) : (
           <ul className="flex flex-col gap-2">
             {customers.map((c) => (
-              <li
-                key={c.customerId}
-                className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface px-4 py-3"
-              >
-                <div className="flex flex-col">
-                  <span className="font-medium">{c.fullName}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {c.email}
-                    {c.phone ? ` · ${c.phone}` : ''}
-                  </span>
-                </div>
-                <span className="text-sm tabular-nums">
-                  {c.activePackage
-                    ? `${c.activePackage.remainingVisits}/${c.activePackage.totalVisits} visitas`
-                    : 'Sin paquete'}
-                </span>
-              </li>
+              <CustomerRow key={c.customerId} customer={c} />
             ))}
           </ul>
         )}

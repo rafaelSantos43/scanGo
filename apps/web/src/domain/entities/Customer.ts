@@ -46,4 +46,8 @@ export class Customer {
   disable(): void {
     this._status = 'disabled'
   }
+
+  enable(): void {
+    this._status = 'active'
+  }
 }
