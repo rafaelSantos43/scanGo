@@ -24,9 +24,16 @@ export interface AuthProvider {
    * metadata del link para que `verifyMagicLink` lo recupere y el
    * caller pueda rechazar un link de customer usado en flujo de admin
    * (y viceversa). El `businessId` NO viaja aqui: para el admin se
-   * resuelve tras verificar via `BusinessAdminRepository`.
+   * resuelve tras verificar via `BusinessAdminRepository`; para el
+   * customer, el caller pasa un `emailRedirectTo` que incluye el
+   * `customer_id` en el query string para que el callback sepa cuál
+   * fila de `customers` ligar al user de Supabase.
    */
-  sendMagicLink(email: Email, role: AuthRole): Promise<void>
+  sendMagicLink(
+    email: Email,
+    role: AuthRole,
+    options?: { emailRedirectTo?: string },
+  ): Promise<void>
 
   /**
    * Verifica un magic link recibido. Devuelve el user resuelto, el

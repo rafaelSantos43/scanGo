@@ -15,7 +15,8 @@
     "db:seed-admin": "bun run scripts/seed-admin.ts",
     "db:seed-webhook": "bun run scripts/seed-webhook.ts",
     "db:seed-api-key": "bun run scripts/seed-api-key.ts",
-    "dev:login-link": "bun run scripts/dev-login-link.ts"
+    "dev:login-link": "bun run scripts/dev-login-link.ts",
+    "dev:customer-link": "bun run scripts/dev-customer-link.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",

@@ -23,6 +23,16 @@ import type { NextResponse } from 'next/server'
 export const SESSION_COOKIE_NAME = 'sg_admin_session'
 export const REFRESH_COOKIE_NAME = 'sg_admin_refresh'
 
+// Sesión del customer (PWA del cliente final). Mismo formato que la del
+// admin pero cookies separadas — admin y customer pueden coexistir en el
+// mismo browser sin interferir. Además, el callback del customer guarda
+// el `customer_id` en una tercera cookie HttpOnly para que el
+// middleware de auth resuelva el customer sin pasar por la DB en cada
+// request (el JWT de Supabase no carga este claim).
+export const CUSTOMER_SESSION_COOKIE_NAME = 'sg_customer_session'
+export const CUSTOMER_REFRESH_COOKIE_NAME = 'sg_customer_refresh'
+export const CUSTOMER_ID_COOKIE_NAME = 'sg_customer_id'
+
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30 // 30 días
 
 function baseOptions(): {
@@ -67,4 +77,42 @@ export function clearSessionCookies(res: NextResponse): void {
   const opts = { ...baseOptions(), maxAge: 0 }
   res.cookies.set(SESSION_COOKIE_NAME, '', opts)
   res.cookies.set(REFRESH_COOKIE_NAME, '', opts)
+}
+
+// ── Customer session helpers ────────────────────────────────────────
+
+export interface CustomerSessionTokens extends SessionTokens {
+  customerId: string
+}
+
+export async function readCustomerSessionCookie(): Promise<string | null> {
+  const store = await cookies()
+  return store.get(CUSTOMER_SESSION_COOKIE_NAME)?.value ?? null
+}
+
+export async function readCustomerRefreshCookie(): Promise<string | null> {
+  const store = await cookies()
+  return store.get(CUSTOMER_REFRESH_COOKIE_NAME)?.value ?? null
+}
+
+export async function readCustomerIdCookie(): Promise<string | null> {
+  const store = await cookies()
+  return store.get(CUSTOMER_ID_COOKIE_NAME)?.value ?? null
+}
+
+export function applyCustomerSessionCookies(
+  res: NextResponse,
+  tokens: CustomerSessionTokens,
+): void {
+  const opts = { ...baseOptions(), maxAge: MAX_AGE_SECONDS }
+  res.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, tokens.accessToken, opts)
+  res.cookies.set(CUSTOMER_REFRESH_COOKIE_NAME, tokens.refreshToken, opts)
+  res.cookies.set(CUSTOMER_ID_COOKIE_NAME, tokens.customerId, opts)
+}
+
+export function clearCustomerSessionCookies(res: NextResponse): void {
+  const opts = { ...baseOptions(), maxAge: 0 }
+  res.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, '', opts)
+  res.cookies.set(CUSTOMER_REFRESH_COOKIE_NAME, '', opts)
+  res.cookies.set(CUSTOMER_ID_COOKIE_NAME, '', opts)
 }

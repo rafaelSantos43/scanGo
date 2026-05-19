@@ -1,15 +1,19 @@
 import {
   buildAuthProvider,
   buildBusinessAdminRepository,
+  buildCustomerRepository,
 } from '@/infrastructure/composition'
 import {
-  BusinessId,
   CustomerId,
   type BusinessId as TBusinessId,
   type CustomerId as TCustomerId,
   type UserId as TUserId,
 } from '@/domain/value-objects/ids'
-import { readSessionCookie } from './sessionCookie'
+import {
+  readCustomerIdCookie,
+  readCustomerSessionCookie,
+  readSessionCookie,
+} from './sessionCookie'
 
 export interface CustomerAuthContext {
   customerId: TCustomerId
@@ -21,26 +25,49 @@ export class UnauthenticatedCustomerError extends Error {
 }
 
 /**
- * TODO(auth): cuando exista SupabaseAuthProvider, leer la cookie HttpOnly del
- * cliente final (magic link) y resolver customerId + businessId desde el JWT.
- * Hoy se acepta por headers para desbloquear desarrollo.
+ * Resuelve el customer autenticado desde las cookies HttpOnly
+ * `sg_customer_session` (access_token de Supabase) + `sg_customer_id`
+ * (el id del customer, guardado por el callback del magic link).
  *
- * Headers temporales esperados (solo en local/dev):
- *   X-Customer-Id: <uuid>
- *   X-Business-Id: <uuid>
- *
- * En produccion, esta funcion debera ignorar esos headers y obligar a la
- * cookie. Marcar para refactor en el chunk de auth.
+ * Valida el JWT contra Supabase y comprueba que la fila `customers` del
+ * cookie efectivamente pertenece al user verificado (`customers.user_id`
+ * setea por el callback en el primer click). Devuelve `customerId +
+ * businessId` listos para los repos multi-tenant.
  */
-export function getCustomerAuthContext(req: Request): CustomerAuthContext {
-  const customerId = req.headers.get('x-customer-id')
-  const businessId = req.headers.get('x-business-id')
-  if (!customerId || !businessId) {
+export async function getCustomerAuthContext(): Promise<CustomerAuthContext> {
+  const token = await readCustomerSessionCookie()
+  const customerIdRaw = await readCustomerIdCookie()
+  if (!token || !customerIdRaw) {
     throw new UnauthenticatedCustomerError()
   }
+
+  const userId = await buildAuthProvider().verifySession(token)
+  if (!userId) {
+    throw new UnauthenticatedCustomerError()
+  }
+
+  let customerId
+  try {
+    customerId = CustomerId(customerIdRaw)
+  } catch {
+    throw new UnauthenticatedCustomerError()
+  }
+
+  const customer = await buildCustomerRepository().findByIdAcrossBusinesses(
+    customerId,
+  )
+  if (!customer || customer.userId !== userId) {
+    // La cookie de id no coincide con la sesión: rechaza. Pasa cuando
+    // se manipula la cookie o cuando el customer fue borrado/relinked.
+    throw new UnauthenticatedCustomerError()
+  }
+  if (!customer.isActive()) {
+    throw new UnauthenticatedCustomerError()
+  }
+
   return {
-    customerId: CustomerId(customerId),
-    businessId: BusinessId(businessId),
+    customerId: customer.id,
+    businessId: customer.businessId,
   }
 }
 

@@ -5,8 +5,12 @@ import type {
 } from '@/domain/repositories/CustomerRepository'
 import { CustomerEmailAlreadyExistsError } from '@/domain/errors/CustomerEmailAlreadyExistsError'
 import type { Email } from '@/domain/value-objects/Email'
-import type { BusinessId, CustomerId } from '@/domain/value-objects/ids'
-import { and, asc, eq } from 'drizzle-orm'
+import type {
+  BusinessId,
+  CustomerId,
+  UserId,
+} from '@/domain/value-objects/ids'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import type { DbOrTx } from './client'
 import { CustomerMapper } from './mappers/CustomerMapper'
 import { customers, packages } from './schema'
@@ -27,6 +31,36 @@ export class CustomerRepositoryDrizzle implements CustomerRepository {
       .where(and(eq(customers.id, id), eq(customers.businessId, businessId)))
       .limit(1)
     return rows[0] ? CustomerMapper.toDomain(rows[0]) : null
+  }
+
+  async findByIdAcrossBusinesses(id: CustomerId): Promise<Customer | null> {
+    // CROSS-TENANT a propósito: el callback del magic link aún no
+    // conoce el businessId, lo deriva de esta fila.
+    const rows = await this.db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, id))
+      .limit(1)
+    return rows[0] ? CustomerMapper.toDomain(rows[0]) : null
+  }
+
+  async linkUserId(
+    id: CustomerId,
+    businessId: BusinessId,
+    userId: UserId,
+  ): Promise<void> {
+    // Idempotente: solo escribe si aún no había user_id. Un retry del
+    // flujo por el mismo customer no reescribe.
+    await this.db
+      .update(customers)
+      .set({ userId })
+      .where(
+        and(
+          eq(customers.id, id),
+          eq(customers.businessId, businessId),
+          isNull(customers.userId),
+        ),
+      )
   }
 
   async findByEmail(

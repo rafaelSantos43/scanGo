@@ -73,6 +73,16 @@ import {
   type RequestAdminMagicLinkResult,
 } from '@/application/use-cases/RequestAdminMagicLink'
 import {
+  RequestCustomerMagicLinkUseCase,
+  type RequestCustomerMagicLinkInput,
+  type RequestCustomerMagicLinkResult,
+} from '@/application/use-cases/RequestCustomerMagicLink'
+import {
+  VerifyCustomerMagicLinkUseCase,
+  type VerifyCustomerMagicLinkInput,
+  type VerifyCustomerMagicLinkResult,
+} from '@/application/use-cases/VerifyCustomerMagicLink'
+import {
   VerifyAdminMagicLinkUseCase,
   type VerifyAdminMagicLinkInput,
   type VerifyAdminMagicLinkResult,
@@ -289,6 +299,36 @@ export async function runVerifyAdminMagicLink(
   const useCase = new VerifyAdminMagicLinkUseCase(
     getAuthProvider(),
     new BusinessAdminRepositoryDrizzle(getDb()),
+  )
+  return useCase.execute(input)
+}
+
+function getAppBaseUrl(): string {
+  const url = process.env.NEXT_PUBLIC_APP_URL
+  if (!url) {
+    throw new Error('NEXT_PUBLIC_APP_URL is not set')
+  }
+  // Sin slash final, para concatenar `/api/auth/...` predeciblemente.
+  return url.replace(/\/$/, '')
+}
+
+export async function runRequestCustomerMagicLink(
+  input: RequestCustomerMagicLinkInput,
+): Promise<RequestCustomerMagicLinkResult> {
+  const useCase = new RequestCustomerMagicLinkUseCase(
+    new CustomerRepositoryDrizzle(getDb()),
+    getAuthProvider(),
+    getAppBaseUrl(),
+  )
+  return useCase.execute(input)
+}
+
+export async function runVerifyCustomerMagicLink(
+  input: VerifyCustomerMagicLinkInput,
+): Promise<VerifyCustomerMagicLinkResult> {
+  const useCase = new VerifyCustomerMagicLinkUseCase(
+    new CustomerRepositoryDrizzle(getDb()),
+    getAuthProvider(),
   )
   return useCase.execute(input)
 }

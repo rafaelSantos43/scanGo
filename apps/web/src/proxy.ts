@@ -1,12 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Punto único de intercepción de requests (lo que Next 16 antes llamaba
-// "middleware"). Dos responsabilidades, separadas por matcher:
+// "middleware"). Tres responsabilidades, separadas por matcher:
 //
 //   - /api/:path*        → CORS para que la PWA y clientes externos
 //                          puedan llamar al API.
 //   - /dashboard/:path*  → refresh proactivo del access_token del admin
 //                          cuando el JWT está por expirar (D-025).
+//   - /api/v1/scan       → refresh proactivo del access_token del
+//                          customer (cookies sg_customer_*) por el
+//                          mismo motivo. Se ejecuta antes que el CORS
+//                          porque ambos handlers son next-pass-through.
 
 // ────────────────────────────────────────────────────────────────────
 // CORS para /api/*
@@ -46,8 +50,10 @@ function handleApiCors(req: NextRequest): NextResponse {
 // ────────────────────────────────────────────────────────────────────
 // Refresh del access_token del admin (D-025)
 
-const SESSION_COOKIE = 'sg_admin_session'
-const REFRESH_COOKIE = 'sg_admin_refresh'
+const ADMIN_SESSION_COOKIE = 'sg_admin_session'
+const ADMIN_REFRESH_COOKIE = 'sg_admin_refresh'
+const CUSTOMER_SESSION_COOKIE = 'sg_customer_session'
+const CUSTOMER_REFRESH_COOKIE = 'sg_customer_refresh'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 días
 
 // Skew para evitar carrera con la página: si el token vence en <30s,
@@ -89,11 +95,13 @@ function cookieOptions(): {
   }
 }
 
-async function handleDashboardRefresh(
+async function refreshSessionCookies(
   req: NextRequest,
+  sessionCookie: string,
+  refreshCookie: string,
 ): Promise<NextResponse> {
-  const access = req.cookies.get(SESSION_COOKIE)?.value
-  const refresh = req.cookies.get(REFRESH_COOKIE)?.value
+  const access = req.cookies.get(sessionCookie)?.value
+  const refresh = req.cookies.get(refreshCookie)?.value
 
   // Sin cookies o con access aún vigente: deja pasar.
   if (!access || !refresh) return NextResponse.next()
@@ -120,10 +128,10 @@ async function handleDashboardRefresh(
 
   if (!refreshRes.ok) {
     // Refresh inválido/expirado: limpia cookies y deja pasar (la page
-    // redirigirá a /login).
+    // redirigirá al login del rol correspondiente).
     const res = NextResponse.next()
-    res.cookies.delete(SESSION_COOKIE)
-    res.cookies.delete(REFRESH_COOKIE)
+    res.cookies.delete(sessionCookie)
+    res.cookies.delete(refreshCookie)
     return res
   }
 
@@ -136,9 +144,21 @@ async function handleDashboardRefresh(
   }
 
   const res = NextResponse.next()
-  res.cookies.set(SESSION_COOKIE, data.access_token, cookieOptions())
-  res.cookies.set(REFRESH_COOKIE, data.refresh_token, cookieOptions())
+  res.cookies.set(sessionCookie, data.access_token, cookieOptions())
+  res.cookies.set(refreshCookie, data.refresh_token, cookieOptions())
   return res
+}
+
+function handleDashboardRefresh(req: NextRequest): Promise<NextResponse> {
+  return refreshSessionCookies(req, ADMIN_SESSION_COOKIE, ADMIN_REFRESH_COOKIE)
+}
+
+function handleCustomerRefresh(req: NextRequest): Promise<NextResponse> {
+  return refreshSessionCookies(
+    req,
+    CUSTOMER_SESSION_COOKIE,
+    CUSTOMER_REFRESH_COOKIE,
+  )
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -146,6 +166,11 @@ async function handleDashboardRefresh(
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   const path = req.nextUrl.pathname
+  // El refresh del customer debe ir antes del CORS porque `/api/v1/scan`
+  // matchea ambos; la respuesta de refresh reescribe cookies y pasa.
+  if (path === '/api/v1/scan') {
+    return handleCustomerRefresh(req)
+  }
   if (path.startsWith('/api/')) {
     return handleApiCors(req)
   }

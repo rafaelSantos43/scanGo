@@ -7,6 +7,7 @@ import {
   runCreateCustomer,
   runDisableCustomer,
   runEnableCustomer,
+  runRequestCustomerMagicLink,
   runUpdateCustomer,
 } from '@/infrastructure/composition'
 import { BusinessNotFoundError } from '@/domain/errors/BusinessNotFoundError'
@@ -107,19 +108,40 @@ export async function createCustomerAction(
     }
   }
 
+  let createdCustomerId
   try {
-    await runCreateCustomer({
+    const { customer } = await runCreateCustomer({
       businessId,
       fullName: parsed.data.fullName,
       email: parsed.data.email,
       phone: parsed.data.phone ?? null,
     })
+    createdCustomerId = customer.id
   } catch (err) {
     return mapDomainError(err)
   }
 
+  // CU-02 paso 3: auto-invitación por magic link. El envío puede fallar
+  // (Supabase rate-limit, SMTP no configurado, etc.); no debe deshacer
+  // la creación del cliente — el admin podrá reenviar luego.
+  let inviteOk = true
+  try {
+    await runRequestCustomerMagicLink({
+      customerId: createdCustomerId,
+      businessId,
+    })
+  } catch (err) {
+    inviteOk = false
+    console.error('createCustomerAction: invite failed:', err)
+  }
+
   revalidatePath('/dashboard/clientes')
-  return { status: 'success', message: 'Cliente creado.' }
+  return {
+    status: 'success',
+    message: inviteOk
+      ? 'Cliente creado e invitación enviada.'
+      : 'Cliente creado, pero falló el envío de la invitación. Puedes reintentar después.',
+  }
 }
 
 const updateCustomerSchema = z.object({

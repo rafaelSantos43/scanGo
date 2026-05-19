@@ -20,14 +20,20 @@ export class SupabaseAuthProvider implements AuthProvider {
     })
   }
 
-  async sendMagicLink(email: Email, role: AuthRole): Promise<void> {
+  async sendMagicLink(
+    email: Email,
+    role: AuthRole,
+    options?: { emailRedirectTo?: string },
+  ): Promise<void> {
     // `role` se serializa en `data` (user_metadata) y vuelve por
     // verifyMagicLink. El businessId NO viaja: para el admin se resuelve
-    // tras verificar via BusinessAdminRepository.
+    // tras verificar via BusinessAdminRepository; para el customer el
+    // caller manda `emailRedirectTo` con `?customer_id=...` en la URL.
     const { error } = await this.client.auth.signInWithOtp({
       email: email.value,
       options: {
-        emailRedirectTo: this.config.magicLinkRedirectUrl,
+        emailRedirectTo:
+          options?.emailRedirectTo ?? this.config.magicLinkRedirectUrl,
         data: { role },
       },
     })
