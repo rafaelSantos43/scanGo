@@ -44,6 +44,12 @@ export default async function DashboardLayout({
             >
               Clientes
             </Link>
+            <Link
+              href="/dashboard/api-keys"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              API keys
+            </Link>
           </nav>
         </div>
         <SignoutButton />

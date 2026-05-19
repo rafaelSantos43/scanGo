@@ -13,6 +13,13 @@ export interface ApiKeyRepository {
 
   findById(id: ApiKeyId, businessId: BusinessId): Promise<ApiKey | null>
 
+  /**
+   * Todas las keys de un negocio, ordenadas por fecha de creación (más
+   * nuevas primero). Incluye las revocadas para que el panel muestre la
+   * historia.
+   */
+  listByBusinessId(businessId: BusinessId): Promise<ApiKey[]>
+
   /** Persiste el estado de revocación de una key existente. */
   update(apiKey: ApiKey, businessId: BusinessId): Promise<void>
 }

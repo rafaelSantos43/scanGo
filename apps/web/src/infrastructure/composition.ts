@@ -33,6 +33,11 @@ import {
   type IssueApiKeyResult,
 } from '@/application/use-cases/IssueApiKey'
 import {
+  ListApiKeysUseCase,
+  type ListApiKeysInput,
+  type ListApiKeysResult,
+} from '@/application/use-cases/ListApiKeys'
+import {
   RevokeApiKeyUseCase,
   type RevokeApiKeyInput,
   type RevokeApiKeyResult,
@@ -286,6 +291,13 @@ export async function runListCustomersWithPackage(
   const useCase = new ListCustomersWithPackageUseCase(
     new CustomerRepositoryDrizzle(getDb()),
   )
+  return useCase.execute(input)
+}
+
+export async function runListApiKeys(
+  input: ListApiKeysInput,
+): Promise<ListApiKeysResult> {
+  const useCase = new ListApiKeysUseCase(new ApiKeyRepositoryDrizzle(getDb()))
   return useCase.execute(input)
 }
 

@@ -1,7 +1,7 @@
 import type { ApiKey } from '@/domain/entities/ApiKey'
 import type { ApiKeyRepository } from '@/domain/repositories/ApiKeyRepository'
 import type { ApiKeyId, BusinessId } from '@/domain/value-objects/ids'
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import type { DbOrTx } from './client'
 import { ApiKeyMapper } from './mappers/ApiKeyMapper'
 import { apiKeys } from './schema'
@@ -36,6 +36,15 @@ export class ApiKeyRepositoryDrizzle implements ApiKeyRepository {
       .where(and(eq(apiKeys.id, id), eq(apiKeys.businessId, businessId)))
       .limit(1)
     return rows[0] ? ApiKeyMapper.toDomain(rows[0]) : null
+  }
+
+  async listByBusinessId(businessId: BusinessId): Promise<ApiKey[]> {
+    const rows = await this.db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.businessId, businessId))
+      .orderBy(desc(apiKeys.createdAt))
+    return rows.map(ApiKeyMapper.toDomain)
   }
 
   async update(apiKey: ApiKey, businessId: BusinessId): Promise<void> {
