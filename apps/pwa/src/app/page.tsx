@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { ApiError, getMyCustomer } from '@/lib/api'
+import { InstallButton } from '@/lib/InstallButton'
 
 // Mensajes para cuando el callback del magic link rebota con ?error=...
 const CALLBACK_ERRORS: Record<string, string> = {
@@ -76,6 +77,9 @@ function LandingInner() {
       >
         Escanear QR del local
       </Link>
+      <div className="flex justify-center">
+        <InstallButton />
+      </div>
     </div>
   )
 }
