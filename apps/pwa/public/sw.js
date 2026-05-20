@@ -17,6 +17,10 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-self.addEventListener('fetch', () => {
-  // Pasa todo a la red sin tocar. No interceptamos requests en v1.
+// Chrome reciente exige que el SW maneje activamente fetches con
+// `respondWith` para que la PWA cuente como installable — un listener
+// vacío no cuenta. Aquí pasamos todo a la red sin tocar (net effect:
+// como si no hubiera SW), pero el criterio se cumple.
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request))
 })
