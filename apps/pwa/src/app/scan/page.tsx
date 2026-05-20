@@ -1,46 +1,50 @@
 'use client'
 
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import { Check, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
-import { ApiError, scanQrToken } from '@/lib/api'
-import { useSession } from '@/lib/session-context'
+import { ApiError, getMyCustomer, scanQrToken } from '@/lib/api'
 
 function messageForCode(code: string): string {
   switch (code) {
     case 'already_scanned_today':
       return 'Ya marcaste tu asistencia hoy.'
     case 'package_depleted':
-      return 'Tu paquete se agoto. Renueva con el local.'
+      return 'Tu paquete se agotó. Renueva con el local.'
     case 'no_active_package':
       return 'No tienes paquete activo. Habla con el local.'
     case 'qr_token_expired':
-      return 'Este QR caduco. Pide al local que muestre uno nuevo.'
+      return 'Este QR caducó. Pide al local que muestre uno nuevo.'
     case 'qr_token_already_used':
       return 'Este QR ya fue usado. Pide al local que muestre uno nuevo.'
     case 'qr_token_not_found':
-      return 'QR invalido. Verifica que estes escaneando el correcto.'
+      return 'QR inválido. Verifica que estés escaneando el correcto.'
     case 'customer_disabled':
-      return 'Tu cuenta esta deshabilitada. Habla con el local.'
+      return 'Tu cuenta está deshabilitada. Habla con el local.'
     case 'unauthenticated':
-      return 'Sesion expirada. Vuelve a entrar al link de invitacion.'
+      return 'Sesión expirada. Vuelve a entrar al link de invitación.'
     default:
-      return 'Algo salio mal. Intenta de nuevo.'
+      return 'Algo salió mal. Intenta de nuevo.'
   }
 }
 
 export default function ScanPage() {
-  const { session, isHydrated } = useSession()
   const [screen, setScreen] = useState<'idle' | 'scanning'>('idle')
   const [cameraError, setCameraError] = useState<string | null>(null)
 
+  // Verifica que haya sesión antes de mostrar el scanner. Si no la hay,
+  // ofrecemos volver a la landing (que muestra el mensaje de "abre tu
+  // magic link"). Sin esto, el primer escaneo daría 401 y sería peor UX.
+  const me = useQuery({
+    queryKey: ['me-customer'],
+    queryFn: getMyCustomer,
+    retry: false,
+  })
+
   const scan = useMutation({
-    mutationFn: (qrToken: string) => {
-      if (!session) throw new Error('Sesion no disponible')
-      return scanQrToken(qrToken, session.customerId, session.businessId)
-    },
+    mutationFn: (qrToken: string) => scanQrToken(qrToken),
   })
 
   function startScanning() {
@@ -55,7 +59,7 @@ export default function ScanPage() {
     setScreen('idle')
   }
 
-  if (!isHydrated) {
+  if (me.isPending) {
     return (
       <main className="flex flex-1 items-center justify-center bg-background text-foreground">
         <Loader2
@@ -66,11 +70,11 @@ export default function ScanPage() {
     )
   }
 
-  if (!session) {
+  if (me.isError) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12 bg-background text-foreground">
         <p className="text-base text-muted-foreground text-center">
-          Necesitas iniciar sesion antes de escanear.
+          Necesitas iniciar sesión antes de escanear.
         </p>
         <Link
           href="/"
@@ -171,7 +175,7 @@ export default function ScanPage() {
                 onError={(err) => {
                   console.error('camera error', err)
                   setCameraError(
-                    'No pudimos abrir la camara. Revisa el permiso del navegador.',
+                    'No pudimos abrir la cámara. Revisa el permiso del navegador.',
                   )
                 }}
                 formats={['qr_code']}
@@ -188,17 +192,17 @@ export default function ScanPage() {
         ) : (
           <div className="flex w-full max-w-sm flex-col items-center gap-6 text-center">
             <h2 className="text-2xl font-semibold tracking-tight">
-              Listo para escanear
+              Hola, {me.data.fullName}
             </h2>
             <p className="text-base text-muted-foreground">
-              Apunta la camara al QR del local.
+              Apunta la cámara al QR del local.
             </p>
             <button
               type="button"
               onClick={startScanning}
               className="inline-flex h-14 w-full items-center justify-center rounded-md bg-primary px-6 text-lg font-medium text-primary-foreground transition-opacity hover:opacity-90"
             >
-              Iniciar escaner
+              Iniciar escáner
             </button>
           </div>
         )}

@@ -12,18 +12,35 @@ import { applyCustomerSessionCookies } from '../../../_lib/sessionCookie'
  * apunta aquí con `?token_hash={{.TokenHash}}&type=magiclink` y el
  * `customer_id=<uuid>` que añadió `RequestCustomerMagicLink` al
  * `emailRedirectTo`.
+ *
+ * Tras setear las cookies, redirige al cliente a la PWA del cliente
+ * final (`NEXT_PUBLIC_PWA_URL`). Las cookies (HttpOnly, SameSite=Lax)
+ * acompañan top-level navigations entre subdominios same-site (en prod:
+ * subdominios de `scango.com`; en dev: localhost en cualquier puerto).
+ * Los fetches subsiguientes de la PWA al API llevan credentials gracias
+ * a `Access-Control-Allow-Credentials: true` en el proxy de CORS.
+ *
+ * Si `NEXT_PUBLIC_PWA_URL` no está set, redirige same-host (fallback
+ * útil para tests; en este repo apps/pwa corre aparte y debe configurarse).
  */
+function pwaBase(): string {
+  return (process.env.NEXT_PUBLIC_PWA_URL ?? '').replace(/\/$/, '')
+}
+
 export async function GET(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const tokenHash = url.searchParams.get('token_hash')
   const type = url.searchParams.get('type')
   const customerIdRaw = url.searchParams.get('customer_id')
 
-  const redirectTo = (path: string): NextResponse =>
-    NextResponse.redirect(new URL(path, req.url))
+  const redirectTo = (path: string): NextResponse => {
+    const base = pwaBase()
+    if (base) return NextResponse.redirect(`${base}${path}`)
+    return NextResponse.redirect(new URL(path, req.url))
+  }
 
   if (!tokenHash || type !== 'magiclink' || !customerIdRaw) {
-    return redirectTo('/scan?error=invalid_link')
+    return redirectTo('/?error=invalid_link')
   }
 
   let customerId
@@ -31,7 +48,7 @@ export async function GET(req: Request): Promise<Response> {
     customerId = CustomerId(customerIdRaw)
   } catch (err) {
     if (err instanceof InvalidIdError) {
-      return redirectTo('/scan?error=invalid_link')
+      return redirectTo('/?error=invalid_link')
     }
     throw err
   }
@@ -50,12 +67,12 @@ export async function GET(req: Request): Promise<Response> {
     return res
   } catch (err) {
     if (err instanceof InvalidMagicLinkError) {
-      return redirectTo('/scan?error=expired')
+      return redirectTo('/?error=expired')
     }
     if (err instanceof CustomerNotFoundError) {
-      return redirectTo('/scan?error=not_a_customer')
+      return redirectTo('/?error=not_a_customer')
     }
     console.error('customer auth callback error', err)
-    return redirectTo('/scan?error=unknown')
+    return redirectTo('/?error=unknown')
   }
 }

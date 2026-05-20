@@ -25,14 +25,22 @@ const ALLOWED_HEADERS = [
 const ALLOWED_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
 
 function corsHeaders(origin: string | null): Record<string, string> {
-  const isDev = process.env.NODE_ENV !== 'production'
-  return {
-    'Access-Control-Allow-Origin': isDev ? (origin ?? '*') : '',
+  // Si el browser envía Origin, lo echamos de vuelta: esto permite que
+  // la PWA mande cookies con `credentials: 'include'` desde otro host
+  // (Allow-Origin debe ser específico, NO `*`, cuando hay credentials).
+  // Sin Origin (curl, server-to-server) caemos a `*` sin credentials.
+  const allowOrigin = origin ?? '*'
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': ALLOWED_METHODS,
     'Access-Control-Allow-Headers': ALLOWED_HEADERS,
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   }
+  if (origin) {
+    headers['Access-Control-Allow-Credentials'] = 'true'
+  }
+  return headers
 }
 
 function handleApiCors(req: NextRequest): NextResponse {
@@ -153,23 +161,43 @@ function handleDashboardRefresh(req: NextRequest): Promise<NextResponse> {
   return refreshSessionCookies(req, ADMIN_SESSION_COOKIE, ADMIN_REFRESH_COOKIE)
 }
 
-function handleCustomerRefresh(req: NextRequest): Promise<NextResponse> {
-  return refreshSessionCookies(
+async function handleCustomerRoute(req: NextRequest): Promise<NextResponse> {
+  // Rutas del customer: combinan refresh proactivo + CORS con
+  // credenciales (la PWA fetchea desde otro origin con `credentials:
+  // 'include'`). El refresh corre solo en non-OPTIONS — OPTIONS es
+  // preflight, contesta sin tocar la sesión.
+  const headers = corsHeaders(req.headers.get('origin'))
+  if (req.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers })
+  }
+  const res = await refreshSessionCookies(
     req,
     CUSTOMER_SESSION_COOKIE,
     CUSTOMER_REFRESH_COOKIE,
   )
+  for (const [k, v] of Object.entries(headers)) {
+    res.headers.set(k, v)
+  }
+  return res
 }
 
 // ────────────────────────────────────────────────────────────────────
 // Dispatcher
 
+// Rutas autenticadas por cookies del customer. Las matcheamos aquí para
+// refrescar el access_token proactivamente antes de que el handler
+// valide la sesión.
+function isCustomerRoute(path: string): boolean {
+  return path === '/api/v1/scan' || path.startsWith('/api/v1/me/')
+}
+
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   const path = req.nextUrl.pathname
-  // El refresh del customer debe ir antes del CORS porque `/api/v1/scan`
-  // matchea ambos; la respuesta de refresh reescribe cookies y pasa.
-  if (path === '/api/v1/scan') {
-    return handleCustomerRefresh(req)
+  // El refresh del customer debe ir antes del CORS porque sus rutas
+  // también matchean `/api/`; la respuesta de refresh reescribe cookies
+  // y pasa, sin tocar headers de CORS (los añade el handler si hace falta).
+  if (isCustomerRoute(path)) {
+    return handleCustomerRoute(req)
   }
   if (path.startsWith('/api/')) {
     return handleApiCors(req)
