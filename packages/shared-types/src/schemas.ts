@@ -88,6 +88,36 @@ export const GenerateQrResponseSchema = z.object({
 })
 export type GenerateQrResponse = z.infer<typeof GenerateQrResponseSchema>
 
+// POST /v1/webhook-subscriptions — el integrador externo registra una URL
+// para recibir eventos. El businessId lo da el auth context (API key).
+// La URL DEBE ser HTTPS; eventos válidos: attendance.created, package.depleted.
+export const CreateWebhookSubscriptionRequestSchema = z
+  .object({
+    url: z.string().url().max(2048),
+    events: z
+      .array(z.enum(['attendance.created', 'package.depleted']))
+      .min(1)
+      .max(10),
+  })
+  .strict()
+export type CreateWebhookSubscriptionRequest = z.infer<
+  typeof CreateWebhookSubscriptionRequestSchema
+>
+
+export const CreateWebhookSubscriptionResponseSchema = z.object({
+  subscriptionId: uuid,
+  businessId: uuid,
+  url: z.string().url(),
+  events: z.array(z.string()),
+  status: z.enum(['active', 'disabled']),
+  createdAt: z.string().datetime(),
+  // Secreto en claro para firmar HMAC — solo se muestra una vez.
+  signingSecret: z.string(),
+})
+export type CreateWebhookSubscriptionResponse = z.infer<
+  typeof CreateWebhookSubscriptionResponseSchema
+>
+
 // POST /auth/admin/magic-link — pide un magic link de login de admin.
 export const RequestAdminMagicLinkRequestSchema = z
   .object({ email: z.string().email().max(254) })

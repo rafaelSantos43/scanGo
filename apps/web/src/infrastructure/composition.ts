@@ -9,6 +9,11 @@ import {
   type CreateCustomerResult,
 } from '@/application/use-cases/CreateCustomer'
 import {
+  CreateWebhookSubscriptionUseCase,
+  type CreateWebhookSubscriptionInput,
+  type CreateWebhookSubscriptionResult,
+} from '@/application/use-cases/CreateWebhookSubscription'
+import {
   DeliverWebhookUseCase,
   type DeliverWebhookResult,
 } from '@/application/use-cases/DeliverWebhook'
@@ -396,6 +401,21 @@ export async function runRevokeApiKey(
     const useCase = new RevokeApiKeyUseCase(
       new ApiKeyRepositoryDrizzle(tx),
       new SystemClock(),
+    )
+    return useCase.execute(input)
+  })
+}
+
+export async function runCreateWebhookSubscription(
+  input: CreateWebhookSubscriptionInput,
+): Promise<CreateWebhookSubscriptionResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new CreateWebhookSubscriptionUseCase(
+      new BusinessRepositoryDrizzle(tx),
+      new WebhookSubscriptionRepositoryDrizzle(tx),
+      new SystemClock(),
+      new UuidGenerator(),
     )
     return useCase.execute(input)
   })

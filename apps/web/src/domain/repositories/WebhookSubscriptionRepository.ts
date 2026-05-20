@@ -21,4 +21,10 @@ export interface WebhookSubscriptionRepository {
     id: WebhookSubscriptionId,
     businessId: BusinessId,
   ): Promise<WebhookSubscription | null>
+
+  /** Inserta una suscripción nueva. */
+  save(
+    subscription: WebhookSubscription,
+    businessId: BusinessId,
+  ): Promise<void>
 }

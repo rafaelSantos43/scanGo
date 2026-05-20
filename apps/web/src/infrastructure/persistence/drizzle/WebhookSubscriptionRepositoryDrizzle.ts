@@ -29,6 +29,20 @@ export class WebhookSubscriptionRepositoryDrizzle
     return rows.map(WebhookSubscriptionMapper.toDomain)
   }
 
+  async save(
+    subscription: WebhookSubscription,
+    businessId: BusinessId,
+  ): Promise<void> {
+    if (subscription.businessId !== businessId) {
+      throw new Error(
+        'WebhookSubscription businessId does not match expected businessId',
+      )
+    }
+    await this.db
+      .insert(webhookSubscriptions)
+      .values(WebhookSubscriptionMapper.toPersistence(subscription))
+  }
+
   async findById(
     id: WebhookSubscriptionId,
     businessId: BusinessId,
