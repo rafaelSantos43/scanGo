@@ -1,11 +1,15 @@
 import type { Business } from '@/domain/entities/Business'
+import { BusinessSlugAlreadyExistsError } from '@/domain/errors/BusinessSlugAlreadyExistsError'
 import type { BusinessRepository } from '@/domain/repositories/BusinessRepository'
 import type { Slug } from '@/domain/value-objects/Slug'
 import type { BusinessId } from '@/domain/value-objects/ids'
 import { and, eq } from 'drizzle-orm'
+import { isUniqueViolation } from './_lib/pgErrors'
 import type { DbOrTx } from './client'
 import { BusinessMapper } from './mappers/BusinessMapper'
 import { businesses } from './schema'
+
+const SLUG_UNIQUE_CONSTRAINT = 'businesses_slug_unique'
 
 export class BusinessRepositoryDrizzle implements BusinessRepository {
   constructor(private readonly db: DbOrTx) {}
@@ -36,19 +40,23 @@ export class BusinessRepositoryDrizzle implements BusinessRepository {
       throw new Error('Business id does not match expected businessId')
     }
     const row = BusinessMapper.toPersistence(business)
-    await this.db
-      .insert(businesses)
-      .values(row)
-      .onConflictDoUpdate({
-        target: businesses.id,
-        set: {
-          name: row.name,
-          type: row.type,
-          timezone: row.timezone,
-        },
-      })
-    // Slug unique violation no se mapea aqui: el slug solo se asigna en
-    // RegisterBusiness (futuro). Si surge una colision por slug, propaga
-    // el error de Postgres y RegisterBusiness la mapeara cuando exista.
+    try {
+      await this.db
+        .insert(businesses)
+        .values(row)
+        .onConflictDoUpdate({
+          target: businesses.id,
+          set: {
+            name: row.name,
+            type: row.type,
+            timezone: row.timezone,
+          },
+        })
+    } catch (err) {
+      if (isUniqueViolation(err, SLUG_UNIQUE_CONSTRAINT)) {
+        throw new BusinessSlugAlreadyExistsError(business.slug.value)
+      }
+      throw err
+    }
   }
 }

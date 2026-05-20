@@ -70,4 +70,38 @@ export class SupabaseAuthProvider implements AuthProvider {
     if (error || !data.user) return null
     return UserId(data.user.id)
   }
+
+  async findOrCreateUserByEmail(
+    email: Email,
+    role: AuthRole,
+  ): Promise<UserId> {
+    // Supabase listUsers no acepta filtro por email; paginamos hasta
+    // encontrarlo. Para v1 (pocos negocios) es aceptable; si el tenant
+    // crece y esto pesa, cambiar a `auth.admin.getUserByEmail` cuando
+    // Supabase lo exponga públicamente.
+    const { data: existing, error: listErr } =
+      await this.client.auth.admin.listUsers()
+    if (listErr) throw listErr
+    const found = existing.users.find((u) => u.email === email.value)
+    if (found) {
+      // Refresca el role en metadata por si el usuario existe desde
+      // otro flujo (signInWithOtp NO escribe metadata en users
+      // existentes).
+      await this.client.auth.admin.updateUserById(found.id, {
+        user_metadata: { role },
+      })
+      return UserId(found.id)
+    }
+
+    const { data: created, error: createErr } =
+      await this.client.auth.admin.createUser({
+        email: email.value,
+        email_confirm: true,
+        user_metadata: { role },
+      })
+    if (createErr || !created.user) {
+      throw createErr ?? new Error('createUser returned no user')
+    }
+    return UserId(created.user.id)
+  }
 }

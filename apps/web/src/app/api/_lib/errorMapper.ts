@@ -15,6 +15,7 @@ import { InvalidTimezoneError } from '@/domain/errors/InvalidTimezoneError'
 import { InvalidVisitCountError } from '@/domain/errors/InvalidVisitCountError'
 import { InvalidWebhookUrlError } from '@/domain/errors/InvalidWebhookUrlError'
 import { NoWebhookEventsError } from '@/domain/errors/NoWebhookEventsError'
+import { BusinessSlugAlreadyExistsError } from '@/domain/errors/BusinessSlugAlreadyExistsError'
 import { LocationNotFoundError } from '@/domain/errors/LocationNotFoundError'
 import { NegativeVisitCountError } from '@/domain/errors/NegativeVisitCountError'
 import { NotABusinessAdminError } from '@/domain/errors/NotABusinessAdminError'
@@ -89,6 +90,8 @@ function mapDomainError(err: DomainError): DomainMapEntry | null {
     return { status: 400, code: 'invalid_webhook_url' }
   if (err instanceof NoWebhookEventsError)
     return { status: 400, code: 'no_webhook_events' }
+  if (err instanceof BusinessSlugAlreadyExistsError)
+    return { status: 409, code: 'business_slug_already_exists' }
   // InvalidIdError generado desde branded constructors en el handler (auth o
   // body) ya esta manejado antes en `mapErrorToHttp` como 401. Aqui solo
   // cubrimos el caso de un InvalidIdError que escape de capas internas.

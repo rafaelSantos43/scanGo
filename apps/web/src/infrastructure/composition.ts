@@ -14,6 +14,11 @@ import {
   type CreateWebhookSubscriptionResult,
 } from '@/application/use-cases/CreateWebhookSubscription'
 import {
+  RegisterBusinessUseCase,
+  type RegisterBusinessInput,
+  type RegisterBusinessResult,
+} from '@/application/use-cases/RegisterBusiness'
+import {
   DeliverWebhookUseCase,
   type DeliverWebhookResult,
 } from '@/application/use-cases/DeliverWebhook'
@@ -401,6 +406,26 @@ export async function runRevokeApiKey(
     const useCase = new RevokeApiKeyUseCase(
       new ApiKeyRepositoryDrizzle(tx),
       new SystemClock(),
+    )
+    return useCase.execute(input)
+  })
+}
+
+// Onboarding del dueño de negocio (CU-01). Crea el business, el
+// business_admin, y dispara el magic link. La parte de DB va en
+// transacción; el findOrCreateUser + sendMagicLink son contra Supabase
+// (fuera de la transacción por necesidad).
+export async function runRegisterBusiness(
+  input: RegisterBusinessInput,
+): Promise<RegisterBusinessResult> {
+  const db = getDb()
+  return db.transaction(async (tx) => {
+    const useCase = new RegisterBusinessUseCase(
+      new BusinessRepositoryDrizzle(tx),
+      new BusinessAdminRepositoryDrizzle(tx),
+      getAuthProvider(),
+      new SystemClock(),
+      new UuidGenerator(),
     )
     return useCase.execute(input)
   })

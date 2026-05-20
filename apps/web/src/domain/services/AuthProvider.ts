@@ -56,4 +56,15 @@ export interface AuthProvider {
    * aparte via BusinessAdminRepository o CustomerRepository.
    */
   verifySession(sessionToken: string): Promise<UserId | null>
+
+  /**
+   * Devuelve el UserId del usuario con ese email; lo crea en el
+   * provider si todavía no existe. Lo usa `RegisterBusiness` (CU-01)
+   * para tener un user.id antes de crear `business_admins` y enviarle
+   * un magic link al dueño que aún no ha hecho click.
+   *
+   * `role` se persiste en metadata para que un `verifyMagicLink`
+   * posterior pueda distinguir admin de customer.
+   */
+  findOrCreateUserByEmail(email: Email, role: AuthRole): Promise<UserId>
 }
