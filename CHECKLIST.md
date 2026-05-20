@@ -68,7 +68,7 @@ Detalle en [`docs/PRD.md`](./docs/PRD.md) §12 y [`docs/ARCHITECTURE.md`](./docs
 - [x] `apps/web` — pantalla `/scan-display` con `qrcode.react`. RF-17 implementado vía polling barato (D-026): `useQuery` cada 5s al Server Action `getActiveQrAction` → `EnsureLocationQrUseCase` (reusa el último QR activo de la sede, o genera uno nuevo si el anterior fue usado). Pausa automática cuando la pestaña no está visible. Botón manual "Generar nuevo QR" fuerza emisión explícita.
 - [x] State management: TanStack Query (server) + React Context (session) + Server Components donde se pueda. Convención registrada en [`docs/agents/agent_ui_ux.md`](docs/agents/agent_ui_ux.md) §3.9. Cero `useEffect` para fetching en todo el código de UI.
 - [x] `/scan-display` migrada a Server Action `generateQrAction` (D-020): la UI interna ya no consume `/v1`. Eliminado `lib/api/client.ts` (código muerto). Fix de la regresión introducida por Auth Phase 4.
-- [ ] Manifest PWA + service worker (`next-pwa`) en `apps/pwa`
+- [x] Manifest PWA + service worker en `apps/pwa` — `manifest.ts`, `icon.tsx` + `icon2.tsx` + `apple-icon.tsx` generados por Next con `ImageResponse` (sin imágenes estáticas), SW mínimo en `public/sw.js`, `ServiceWorkerRegister` en el layout (solo en prod por default; override con `NEXT_PUBLIC_SW_IN_DEV=true`). `metadata` y `viewport` reales (Spanish), theme-color, appleWebApp capable. Sin librería externa (Next 16 nativo).
 - [x] Dashboard del negocio "cabina mínima" (D-020): shell + nav, asistencias de hoy, lista de clientes con paquete, formularios de alta de cliente y asignar paquete (Server Components + Server Actions). Falta: QR rotativo + feed en vivo.
 
 ## Cross-cutting (cuando aplique)
